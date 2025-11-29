@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Menu, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -49,7 +51,10 @@ export const Navbar = () => {
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <Button className="bg-primary hover:bg-primary/90 text-white font-medium px-6">
+            <Button 
+              onClick={() => navigate("/login")}
+              className="bg-primary hover:bg-primary/90 text-white font-medium px-6"
+            >
               Comenzar gratis
             </Button>
           </div>
@@ -85,7 +90,10 @@ export const Navbar = () => {
               >
                 Precios
               </button>
-              <Button className="bg-primary hover:bg-primary/90 text-white font-medium w-full">
+              <Button 
+                onClick={() => navigate("/login")}
+                className="bg-primary hover:bg-primary/90 text-white font-medium w-full"
+              >
                 Comenzar gratis
               </Button>
             </div>

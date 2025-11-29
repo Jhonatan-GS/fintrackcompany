@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const FinalCTA = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-20 px-4">
       <div className="container mx-auto">
@@ -17,6 +19,7 @@ export const FinalCTA = () => {
 
           <Button
             size="lg"
+            onClick={() => navigate("/login")}
             className="bg-primary hover:bg-primary/90 text-white font-semibold px-12 h-14 text-lg glow-primary transition-all hover:scale-105"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
