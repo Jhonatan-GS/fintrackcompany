@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Pricing = () => {
+  const navigate = useNavigate();
+  
   const features = [
     "Conexión ilimitada de bancos",
     "Sincronización automática de emails",
@@ -44,7 +47,10 @@ export const Pricing = () => {
               ))}
             </ul>
 
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-12 glow-primary">
+            <Button 
+              onClick={() => navigate("/login")}
+              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-12 glow-primary"
+            >
               Crear cuenta gratis
             </Button>
 

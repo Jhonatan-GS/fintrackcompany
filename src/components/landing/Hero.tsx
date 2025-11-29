@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import dashboardMockup from "@/assets/dashboard-mockup.jpg";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="pt-32 pb-20 px-4">
       <div className="container mx-auto">
@@ -25,6 +28,7 @@ export const Hero = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
+                onClick={() => navigate("/login")}
                 className="bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12 glow-primary transition-all hover:scale-105"
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
