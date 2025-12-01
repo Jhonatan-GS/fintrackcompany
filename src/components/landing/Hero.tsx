@@ -7,17 +7,17 @@ export const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="pt-32 pb-20 px-4">
+    <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4">
       <div className="container mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           {/* Left Content */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Tus finanzas en{" "}
                 <span className="text-gradient">piloto automático</span>
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
                 Conecta tu email, y FinTrack rastrea automáticamente cada pago y
                 transferencia de tus bancos colombianos. Sin ingresar datos
                 manualmente.
@@ -62,17 +62,17 @@ export const Hero = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap gap-6 pt-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
+            <div className="flex flex-wrap gap-4 sm:gap-6 pt-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 <span>Gratis para siempre</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 <span>Bancolombia, Nequi, Nu y más</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 <span>100% seguro</span>
               </div>
             </div>
