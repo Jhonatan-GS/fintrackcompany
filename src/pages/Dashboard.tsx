@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TrendingUp, LogOut } from "lucide-react";
@@ -5,6 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      console.log('✅ User authenticated in Dashboard:', user.email);
+      console.log('✅ User ID:', user.id);
+      console.log('✅ User metadata:', user.user_metadata);
+    }
+  }, [user]);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario";
   const userAvatar = user?.user_metadata?.avatar_url || "";

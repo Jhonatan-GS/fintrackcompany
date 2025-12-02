@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -35,6 +35,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     console.log('🔧 Using external Supabase project');
+    console.log('🔧 Supabase configured:', isSupabaseConfigured());
+    
+    if (!isSupabaseConfigured()) {
+      console.error('❌ CRITICAL: External Supabase is NOT configured!');
+      toast.error("Error de configuración de Supabase");
+    }
     
     // Set up auth state listener
     const {
@@ -73,7 +79,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('=== SIGN IN WITH GOOGLE ===');
+      console.log('Supabase configured:', isSupabaseConfigured());
+      
+      if (!isSupabaseConfigured()) {
+        console.error('❌ Cannot sign in: Supabase not configured');
+        toast.error("Error: Supabase no está configurado. Verifica las variables de entorno.");
+        return;
+      }
+      
       const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -87,8 +103,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       if (error) {
-        console.error("Error signing in with Google:", error);
+        console.error("❌ Error signing in with Google:", error);
         toast.error("Error al iniciar sesión con Google. Intenta de nuevo.");
+      } else {
+        console.log('✅ OAuth redirect initiated');
       }
     } catch (error) {
       console.error("Unexpected error:", error);
