@@ -8,34 +8,63 @@ const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    const handleCallback = async () => {
       try {
-        // Get the session from the URL
-        const { data, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.error("Error getting session:", sessionError);
-          setError("Error al procesar la autenticación");
-          setTimeout(() => navigate("/login"), 3000);
+        console.log('=== AUTH CALLBACK ===');
+        console.log('URL actual:', window.location.href);
+        
+        // Obtener la sesión del hash de la URL
+        const { data, error } = await supabase.auth.getSession();
+        
+        console.log('Session data:', data);
+        console.log('Session error:', error);
+        
+        if (error) {
+          console.error('Error obteniendo sesión:', error);
+          setError(error.message);
+          setTimeout(() => navigate('/login'), 3000);
           return;
         }
-
-        if (data.session) {
-          // Successfully authenticated, redirect to dashboard
-          navigate("/dashboard", { replace: true });
+        
+        if (data?.session) {
+          console.log('✅ Sesión válida, usuario:', data.session.user.email);
+          // Redirigir al dashboard
+          navigate('/dashboard', { replace: true });
         } else {
-          // No session found
-          setError("No se pudo iniciar sesión");
-          setTimeout(() => navigate("/login"), 3000);
+          console.log('No hay sesión, verificando hash...');
+          
+          // Intentar intercambiar el código por sesión
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          
+          if (accessToken) {
+            console.log('Token encontrado en hash, estableciendo sesión...');
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: hashParams.get('refresh_token') || ''
+            });
+            
+            if (sessionError) {
+              console.error('Error estableciendo sesión:', sessionError);
+              setError(sessionError.message);
+              setTimeout(() => navigate('/login'), 3000);
+            } else {
+              console.log('✅ Sesión establecida:', sessionData.user?.email);
+              navigate('/dashboard', { replace: true });
+            }
+          } else {
+            console.log('No hay token, redirigiendo a login');
+            navigate('/login', { replace: true });
+          }
         }
       } catch (err) {
-        console.error("Unexpected error in auth callback:", err);
-        setError("Error inesperado");
-        setTimeout(() => navigate("/login"), 3000);
+        console.error('Error en callback:', err);
+        setError('Error procesando autenticación');
+        setTimeout(() => navigate('/login'), 3000);
       }
     };
 
-    handleAuthCallback();
+    handleCallback();
   }, [navigate]);
 
   return (
@@ -51,12 +80,13 @@ const AuthCallback = () => {
         {error ? (
           <>
             <div className="w-16 h-16 border-4 border-destructive rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl">✕</span>
+              <span className="text-2xl text-destructive">✕</span>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-destructive">{error}</h2>
-              <p className="text-muted-foreground">
-                Redirigiendo a la página de inicio de sesión...
+              <h2 className="text-2xl font-bold text-destructive">Error de autenticación</h2>
+              <p className="text-muted-foreground">{error}</p>
+              <p className="text-muted-foreground text-sm">
+                Redirigiendo al login...
               </p>
             </div>
           </>
@@ -66,7 +96,7 @@ const AuthCallback = () => {
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">Iniciando sesión...</h2>
               <p className="text-muted-foreground">
-                Por favor espera mientras procesamos tu autenticación
+                Por favor espera un momento
               </p>
             </div>
           </>
