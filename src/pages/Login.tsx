@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, ArrowLeft } from "lucide-react";
+import { TrendingUp, ArrowLeft, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 const Login = () => {
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
@@ -12,6 +13,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const supabaseReady = isSupabaseConfigured();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -83,12 +85,23 @@ const Login = () => {
             </p>
           </div>
 
+          {/* Error message if Supabase not configured */}
+          {!supabaseReady && (
+            <div className="bg-destructive/10 border border-destructive/50 text-destructive rounded-lg p-3 sm:p-4 mb-6 flex items-start gap-2 sm:gap-3">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm">
+                <strong>Error de configuración:</strong> Las variables de entorno de Supabase no están disponibles. 
+                Verifica VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.
+              </div>
+            </div>
+          )}
+
           {/* Google Sign In Button */}
           <Button
             size="lg"
             onClick={handleGoogleSignIn}
-            disabled={isSigningIn}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-12 sm:h-14 text-sm sm:text-base px-4 glow-primary"
+            disabled={isSigningIn || !supabaseReady}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-12 sm:h-14 text-sm sm:text-base px-4 glow-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSigningIn ? (
               <div className="flex items-center gap-3">
@@ -173,8 +186,8 @@ const Login = () => {
 
             <Button
               type="submit"
-              disabled={isSigningIn}
-              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-11 sm:h-12 text-sm sm:text-base"
+              disabled={isSigningIn || !supabaseReady}
+              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-11 sm:h-12 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Iniciar sesión
             </Button>
