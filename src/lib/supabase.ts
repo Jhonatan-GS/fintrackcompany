@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+// Usar proyecto externo de Supabase
+const supabaseUrl = 'https://efwoenffjhjauhaykiew.supabase.co'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmd29lbmZmamhqYXVoYXlraWV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxODk2OTgsImV4cCI6MjA3OTc2NTY5OH0.auIqdT3Hc3t6yZiTa8wAF6l6driqh0v4ev-BWdlKF4M'
 
 // Debug logs para verificar configuración
 console.log('=== SUPABASE CONFIG ===')
