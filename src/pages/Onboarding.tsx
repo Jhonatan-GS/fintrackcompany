@@ -5,12 +5,12 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { OnboardingStepper } from "@/components/onboarding/OnboardingStepper";
 import { BankSelectionStep } from "@/components/onboarding/BankSelectionStep";
-import { TelegramStep } from "@/components/onboarding/TelegramStep";
+import { WhatsAppVerification } from "@/components/onboarding/WhatsAppVerification";
 import { CategoriesStep } from "@/components/onboarding/CategoriesStep";
 
 const STEPS = [
   { number: 1, title: 'Bancos', description: 'Selecciona los bancos que usas' },
-  { number: 2, title: 'Telegram', description: 'Conecta para recibir notificaciones' },
+  { number: 2, title: 'WhatsApp', description: 'Conecta para recibir notificaciones' },
   { number: 3, title: 'Categorías', description: 'Personaliza tus categorías' }
 ];
 
@@ -58,7 +58,7 @@ const Onboarding = () => {
     setCurrentStep(2);
   };
 
-  const handleTelegramComplete = async () => {
+  const handleWhatsAppComplete = async () => {
     if (!user) return;
 
     await supabase
@@ -70,7 +70,7 @@ const Onboarding = () => {
     setCurrentStep(3);
   };
 
-  const handleTelegramSkip = async () => {
+  const handleWhatsAppSkip = async () => {
     if (!user) return;
 
     await supabase
@@ -140,10 +140,10 @@ const Onboarding = () => {
           )}
 
           {currentStep === 2 && (
-            <TelegramStep
+            <WhatsAppVerification
               userId={user.id}
-              onComplete={handleTelegramComplete}
-              onSkip={handleTelegramSkip}
+              onComplete={handleWhatsAppComplete}
+              onSkip={handleWhatsAppSkip}
               onBack={goToPreviousStep}
             />
           )}
