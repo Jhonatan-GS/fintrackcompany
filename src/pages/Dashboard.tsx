@@ -1,19 +1,23 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TrendingUp, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { MOCK_DATA } from "@/data/mockData";
+import SummaryCards from "@/components/dashboard/SummaryCards";
+import InsightsSection from "@/components/dashboard/InsightsSection";
+import ExpensesPieChart from "@/components/dashboard/ExpensesPieChart";
+import TrendLineChart from "@/components/dashboard/TrendLineChart";
+import CategorySummaryTable from "@/components/dashboard/CategorySummaryTable";
+import RecentTransactions from "@/components/dashboard/RecentTransactions";
+import PendingConfirmations from "@/components/dashboard/PendingConfirmations";
+import MonthSelector from "@/components/dashboard/MonthSelector";
+
+// ⚠️ TODO: Cambiar MOCK_DATA por datos reales de Supabase cuando estén los flujos N8N
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      console.log('✅ User authenticated in Dashboard:', user.email);
-      console.log('✅ User ID:', user.id);
-      console.log('✅ User metadata:', user.user_metadata);
-    }
-  }, [user]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario";
   const userAvatar = user?.user_metadata?.avatar_url || "";
@@ -54,7 +58,7 @@ const Dashboard = () => {
                 className="border-border hover:bg-muted"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Cerrar sesión
+                <span className="hidden sm:inline">Cerrar sesión</span>
               </Button>
             </div>
           </div>
@@ -62,77 +66,46 @@ const Dashboard = () => {
       </nav>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-12">
-        {/* Welcome section */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <Avatar className="w-24 h-24 border-4 border-primary/20">
-              <AvatarImage src={userAvatar} alt={userName} />
-              <AvatarFallback className="bg-primary/20 text-primary text-3xl font-bold">
-                {userInitial}
-              </AvatarFallback>
-            </Avatar>
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Header with greeting and month selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              👋 ¡Hola, {userName}!
+            </h1>
+            <p className="text-muted-foreground">Así va tu mes...</p>
           </div>
-          <h1 className="text-4xl font-bold mb-2">
-            ¡Hola, <span className="text-gradient">{userName}</span>!
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Bienvenido a tu espacio financiero
-          </p>
+          <MonthSelector
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+          />
         </div>
 
-        {/* Construction notice */}
-        <div className="max-w-2xl mx-auto">
-          <div className="glass-card p-8 rounded-3xl text-center space-y-6">
-            <div className="text-6xl">🚧</div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Tu dashboard está en construcción</h2>
-              <p className="text-muted-foreground">
-                Estamos trabajando en traerte la mejor experiencia para gestionar tus
-                finanzas
-              </p>
-            </div>
+        {/* Summary Cards */}
+        <SummaryCards
+          income={MOCK_DATA.summary.income}
+          expenses={MOCK_DATA.summary.expenses}
+          balance={MOCK_DATA.summary.balance}
+          previousMonthExpenses={MOCK_DATA.summary.previousMonthExpenses}
+        />
 
-            {/* Features coming soon */}
-            <div className="grid md:grid-cols-2 gap-4 pt-6">
-              <div className="glass-card p-4 rounded-xl">
-                <div className="text-3xl mb-2">📊</div>
-                <h3 className="font-semibold mb-1">Gráficas interactivas</h3>
-                <p className="text-sm text-muted-foreground">
-                  Visualiza tus gastos en tiempo real
-                </p>
-              </div>
-              <div className="glass-card p-4 rounded-xl">
-                <div className="text-3xl mb-2">🔄</div>
-                <h3 className="font-semibold mb-1">Sincronización automática</h3>
-                <p className="text-sm text-muted-foreground">
-                  Conecta tu Gmail para importar transacciones
-                </p>
-              </div>
-              <div className="glass-card p-4 rounded-xl">
-                <div className="text-3xl mb-2">🤖</div>
-                <h3 className="font-semibold mb-1">Categorización con IA</h3>
-                <p className="text-sm text-muted-foreground">
-                  IA inteligente que aprende de tus hábitos
-                </p>
-              </div>
-              <div className="glass-card p-4 rounded-xl">
-                <div className="text-3xl mb-2">📱</div>
-                <h3 className="font-semibold mb-1">Alertas por Telegram</h3>
-                <p className="text-sm text-muted-foreground">
-                  Notificaciones instantáneas de movimientos
-                </p>
-              </div>
-            </div>
+        {/* Pending Confirmations */}
+        <PendingConfirmations confirmations={MOCK_DATA.pendingConfirmations} />
 
-            {/* Placeholder message */}
-            <div className="pt-6 border-t border-border">
-              <p className="text-muted-foreground">
-                Próximamente: Tus transacciones aparecerán aquí
-              </p>
-            </div>
-          </div>
+        {/* Insights */}
+        <InsightsSection insights={MOCK_DATA.insights} />
+
+        {/* Charts Grid */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <ExpensesPieChart data={MOCK_DATA.expensesByCategory} />
+          <TrendLineChart data={MOCK_DATA.dailyTrend} />
         </div>
+
+        {/* Category Summary Table */}
+        <CategorySummaryTable data={MOCK_DATA.categoryComparison} />
+
+        {/* Recent Transactions */}
+        <RecentTransactions transactions={MOCK_DATA.transactions} />
       </main>
     </div>
   );
