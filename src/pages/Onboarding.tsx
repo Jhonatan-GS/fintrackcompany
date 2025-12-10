@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -7,6 +7,7 @@ import { OnboardingStepper } from "@/components/onboarding/OnboardingStepper";
 import { BankSelectionStep } from "@/components/onboarding/BankSelectionStep";
 import { WhatsAppVerification } from "@/components/onboarding/WhatsAppVerification";
 import { CategoriesStep } from "@/components/onboarding/CategoriesStep";
+import { Loader2 } from "lucide-react";
 
 const STEPS = [
   { number: 1, title: 'Bancos', description: 'Selecciona los bancos que usas' },
@@ -20,6 +21,49 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load onboarding state from DB on mount
+  useEffect(() => {
+    const loadOnboardingState = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('onboarding_step, onboarding_completed')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (userData?.onboarding_completed) {
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+        
+        if (userData?.onboarding_step !== null && userData?.onboarding_step !== undefined) {
+          // onboarding_step represents the LAST completed step
+          // So we need to go to the NEXT step (step + 1), but cap at 3
+          const nextStep = Math.min(userData.onboarding_step + 1, 3);
+          setCurrentStep(nextStep);
+          
+          // Mark previous steps as completed
+          const completed = [];
+          for (let i = 1; i < nextStep; i++) {
+            completed.push(i);
+          }
+          setCompletedSteps(completed);
+        }
+      } catch (err) {
+        console.error('Error loading onboarding state:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadOnboardingState();
+  }, [user, navigate]);
 
   const markStepComplete = (step: number) => {
     if (!completedSteps.includes(step)) {
@@ -105,6 +149,14 @@ const Onboarding = () => {
   };
 
   if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

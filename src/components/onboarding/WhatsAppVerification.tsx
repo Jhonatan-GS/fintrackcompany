@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Phone, MessageSquare, Check, Loader2, ArrowLeft } from 'lucide-react';
 
-type WhatsAppStep = 'INPUT_PHONE' | 'WAITING_CODE' | 'VERIFIED';
+type WhatsAppStep = 'LOADING' | 'INPUT_PHONE' | 'WAITING_CODE' | 'VERIFIED';
 
 interface WhatsAppVerificationProps {
   userId: string;
@@ -15,14 +15,54 @@ interface WhatsAppVerificationProps {
 }
 
 export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: WhatsAppVerificationProps) => {
-  const [step, setStep] = useState<WhatsAppStep>('INPUT_PHONE');
+  const [step, setStep] = useState<WhatsAppStep>('LOADING');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fullPhoneNumber = `+57${phone}`;
+  const fullPhoneNumber = phone.startsWith('+') ? phone : `+57${phone}`;
+
+  // Check for existing verification on mount
+  useEffect(() => {
+    const checkExistingVerification = async () => {
+      try {
+        const { data: existing, error } = await supabase
+          .from('whatsapp_verifications')
+          .select('phone, expires_at, is_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (existing) {
+          if (existing.is_verified) {
+            // Already verified, complete this step
+            setStep('VERIFIED');
+            setTimeout(() => onComplete(), 1500);
+            return;
+          }
+          
+          const expiresAt = new Date(existing.expires_at);
+          if (expiresAt > new Date()) {
+            // Code still valid, show code input screen
+            setPhone(existing.phone);
+            setStep('WAITING_CODE');
+            return;
+          }
+        }
+        
+        // No valid code exists, show phone input
+        setStep('INPUT_PHONE');
+      } catch (err) {
+        console.error('Error checking verification:', err);
+        setStep('INPUT_PHONE');
+      }
+    };
+    
+    checkExistingVerification();
+  }, [userId, onComplete]);
 
   // Formatear número
   const formatPhone = (value: string) => {
@@ -32,7 +72,8 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
 
   // Crear verificación en la base de datos
   const createVerification = async () => {
-    if (phone.length < 10) {
+    const phoneToValidate = phone.startsWith('+') ? phone.replace('+57', '') : phone;
+    if (phoneToValidate.length < 10) {
       setError('Ingresa un número de 10 dígitos');
       return;
     }
@@ -143,6 +184,14 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
           Recibe notificaciones instantáneas de cada transacción
         </p>
       </div>
+
+      {/* Step: LOADING */}
+      {step === 'LOADING' && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      )}
 
       {/* Step: INPUT_PHONE */}
       {step === 'INPUT_PHONE' && (
