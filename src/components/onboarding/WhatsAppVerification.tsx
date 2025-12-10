@@ -14,6 +14,8 @@ interface WhatsAppVerificationProps {
   onBack: () => void;
 }
 
+const STORAGE_KEY = 'fintrack_verification_code';
+
 export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: WhatsAppVerificationProps) => {
   const [step, setStep] = useState<WhatsAppStep>('LOADING');
   const [phone, setPhone] = useState('');
@@ -21,6 +23,33 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoVerified, setHasAutoVerified] = useState(false);
+
+  // Load saved code from localStorage on mount
+  useEffect(() => {
+    const savedCode = localStorage.getItem(STORAGE_KEY);
+    if (savedCode && savedCode.length <= 6) {
+      const codeArray = savedCode.split('').concat(Array(6 - savedCode.length).fill(''));
+      setCode(codeArray);
+    }
+  }, []);
+
+  // Save code to localStorage when it changes
+  useEffect(() => {
+    const fullCode = code.join('');
+    if (fullCode.length > 0) {
+      localStorage.setItem(STORAGE_KEY, fullCode);
+    }
+  }, [code]);
+
+  // Auto-verify when 6 digits are entered
+  useEffect(() => {
+    const fullCode = code.join('');
+    if (fullCode.length === 6 && !isVerifying && !hasAutoVerified && step === 'WAITING_CODE') {
+      setHasAutoVerified(true);
+      handleVerifyCode();
+    }
+  }, [code, isVerifying, hasAutoVerified, step]);
 
   const fullPhoneNumber = phone.startsWith('+') ? phone : `+57${phone}`;
 
@@ -121,6 +150,8 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
       if (rpcError) throw rpcError;
 
       if (data?.success) {
+        // Clear localStorage on success
+        localStorage.removeItem(STORAGE_KEY);
         setStep('VERIFIED');
         toast.success('¡WhatsApp verificado!');
         setTimeout(() => onComplete(), 2000);
@@ -133,11 +164,19 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
         } else {
           setError(errorMsg);
         }
+        // Clear code and localStorage on failure
         setCode(['', '', '', '', '', '']);
+        localStorage.removeItem(STORAGE_KEY);
+        setHasAutoVerified(false);
+        // Focus first input
+        setTimeout(() => document.getElementById('code-0')?.focus(), 100);
       }
     } catch (err) {
       console.error('Error:', err);
       setError('Error al verificar. Intenta de nuevo.');
+      setCode(['', '', '', '', '', '']);
+      localStorage.removeItem(STORAGE_KEY);
+      setHasAutoVerified(false);
     } finally {
       setIsVerifying(false);
     }
@@ -324,7 +363,8 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
                   value={digit}
                   onChange={(e) => handleCodeChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-14 text-center text-2xl font-bold bg-muted border-2 border-border rounded-lg text-foreground focus:border-[#25D366] focus:outline-none transition-colors"
+                  disabled={isVerifying}
+                  className="w-12 h-14 text-center text-2xl font-bold bg-muted border-2 border-border rounded-lg text-foreground focus:border-[#25D366] focus:outline-none transition-colors disabled:opacity-50"
                 />
               ))}
             </div>
@@ -333,30 +373,21 @@ export const WhatsAppVerification = ({ userId, onComplete, onSkip, onBack }: Wha
               <p className="text-destructive text-sm text-center">{error}</p>
             )}
             
-            {/* Botón verificar */}
-            <Button
-              onClick={handleVerifyCode}
-              disabled={code.join('').length !== 6 || isVerifying}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg"
-            >
-              {isVerifying ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                <>
-                  <Check className="w-5 h-5 mr-2" />
-                  Verificar código
-                </>
-              )}
-            </Button>
+            {/* Indicador de verificación automática */}
+            {isVerifying && (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span>Verificando...</span>
+              </div>
+            )}
             
             {/* Cambiar número */}
             <button
               onClick={() => {
                 setStep('INPUT_PHONE');
                 setCode(['', '', '', '', '', '']);
+                localStorage.removeItem(STORAGE_KEY);
+                setHasAutoVerified(false);
                 setError(null);
               }}
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
