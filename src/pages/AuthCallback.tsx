@@ -28,6 +28,28 @@ const AuthCallback = () => {
         
         if (data?.session) {
           console.log('✅ Sesión válida, usuario:', data.session.user.email);
+          
+          // Guardar tokens de Gmail si están disponibles
+          const session = data.session;
+          if (session.provider_token) {
+            console.log('📧 Guardando tokens de Gmail...');
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({
+                gmail_access_token: session.provider_token,
+                gmail_refresh_token: session.provider_refresh_token || null,
+                gmail_token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+                gmail_connected: true
+              })
+              .eq('id', session.user.id);
+            
+            if (updateError) {
+              console.error('Error guardando tokens de Gmail:', updateError);
+            } else {
+              console.log('✅ Tokens de Gmail guardados');
+            }
+          }
+          
           // Redirigir al dashboard
           navigate('/dashboard', { replace: true });
         } else {

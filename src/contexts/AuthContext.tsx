@@ -94,6 +94,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         provider: "google",
         options: {
           redirectTo: redirectUrl,
+          scopes: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
           queryParams: {
             access_type: "offline",
             prompt: "consent",
