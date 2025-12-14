@@ -1,4 +1,4 @@
-import { TrendingUp, Twitter, Github, Linkedin } from "lucide-react";
+import { TrendingUp, Instagram, Linkedin, Facebook } from "lucide-react";
 
 export const Footer = () => {
   return (
@@ -71,31 +71,37 @@ export const Footer = () => {
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border">
           <p className="text-sm text-muted-foreground mb-4 md:mb-0">
-            © 2024 FinTrack. Todos los derechos reservados.
+            © 2025 FinTrack. Todos los derechos reservados.
           </p>
 
           {/* Social icons */}
           <div className="flex gap-4">
             <a
-              href="#"
-              className="w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-              aria-label="Twitter"
+              href="https://instagram.com/fintrack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary flex items-center justify-center transition-colors"
+              aria-label="Instagram"
             >
-              <Twitter className="w-5 h-5" />
+              <Instagram className="w-5 h-5" />
             </a>
             <a
-              href="#"
-              className="w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-              aria-label="Github"
-            >
-              <Github className="w-5 h-5" />
-            </a>
-            <a
-              href="#"
-              className="w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+              href="https://linkedin.com/company/fintrack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary flex items-center justify-center transition-colors"
               aria-label="LinkedIn"
             >
               <Linkedin className="w-5 h-5" />
+            </a>
+            <a
+              href="https://facebook.com/fintrack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary flex items-center justify-center transition-colors"
+              aria-label="Facebook"
+            >
+              <Facebook className="w-5 h-5" />
             </a>
           </div>
         </div>

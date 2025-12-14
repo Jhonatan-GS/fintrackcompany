@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, BarChart3 } from "lucide-react";
+import { Mail, MessageCircle, BarChart3 } from "lucide-react";
 
 export const HowItWorks = () => {
   const steps = [
@@ -9,10 +9,10 @@ export const HowItWorks = () => {
         "Vincula tu cuenta de Google de forma segura. Solo leemos los correos de tus bancos.",
     },
     {
-      icon: MessageSquare,
-      title: "Confirma vía Telegram",
+      icon: MessageCircle,
+      title: "Confirma vía WhatsApp",
       description:
-        "Recibe una notificación por cada movimiento. Categorízalo con un tap.",
+        "Recibe cada transacción en tu WhatsApp y confírmala con un mensaje.",
     },
     {
       icon: BarChart3,
@@ -36,7 +36,7 @@ export const HowItWorks = () => {
           {steps.map((step, index) => (
             <div
               key={index}
-              className="glass-card p-6 sm:p-8 rounded-2xl hover:bg-card/80 transition-all group"
+              className="glass-card p-6 sm:p-8 rounded-2xl hover:border-primary/30 transition-all duration-300 group"
             >
               <div className="flex items-center gap-3 sm:gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">

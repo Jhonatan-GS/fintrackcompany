@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Category {
   id: string;
@@ -27,6 +29,7 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
   const [newCategory, setNewCategory] = useState({
     name: '',
     icon: '📦',
@@ -95,54 +98,76 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="text-center space-y-2">
         <div className="text-4xl mb-4">🏷️</div>
-        <h2 className="text-2xl font-bold text-foreground">Tus categorías</h2>
+        <h2 className="text-2xl font-bold text-foreground">Categorías automáticas</h2>
         <p className="text-muted-foreground">
-          Estas son las categorías predeterminadas. Puedes personalizarlas después en Ajustes.
+          Clasificamos tus gastos automáticamente usando estas categorías.
+          <br />
+          <span className="text-primary">No necesitas hacer nada aquí.</span>
         </p>
       </div>
 
-      {/* Expense Categories */}
+      {/* AI Badge */}
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
+          <Sparkles className="w-4 h-4 text-accent" />
+          <span className="text-accent text-sm">La IA clasifica automáticamente</span>
+        </div>
+      </div>
+
+      {/* Expense Categories - Display Only */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Gastos</h3>
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
           {expenseCategories.map((cat) => (
             <div
               key={cat.id}
-              className="flex flex-col items-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-colors"
+              className="flex flex-col items-center p-3 rounded-lg bg-card border border-border opacity-90"
             >
               <span className="text-2xl mb-1">{cat.icon}</span>
-              <span className="text-xs text-foreground text-center line-clamp-1">{cat.name}</span>
+              <span className="text-xs text-muted-foreground text-center line-clamp-1">{cat.name}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Income Categories */}
+      {/* Income Categories - Display Only */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Ingresos</h3>
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
           {incomeCategories.map((cat) => (
             <div
               key={cat.id}
-              className="flex flex-col items-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-colors"
+              className="flex flex-col items-center p-3 rounded-lg bg-card border border-border opacity-90"
             >
               <span className="text-2xl mb-1">{cat.icon}</span>
-              <span className="text-xs text-foreground text-center line-clamp-1">{cat.name}</span>
+              <span className="text-xs text-muted-foreground text-center line-clamp-1">{cat.name}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Create button */}
+      {/* Separator */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-muted-foreground text-sm">¿Falta alguna?</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      {/* Create custom category */}
       <button
         onClick={() => setShowModal(true)}
         className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
       >
         <Plus className="w-4 h-4" />
-        Crear categoría personalizada
+        Crear categoría personalizada (opcional)
       </button>
+
+      <p className="text-center text-muted-foreground text-xs">
+        Las categorías personalizadas aparecerán cuando confirmes transacciones
+      </p>
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
@@ -154,7 +179,7 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
         </button>
         <button
           onClick={onComplete}
-          className="px-6 py-3 rounded-lg font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+          className="px-6 py-3 rounded-lg font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all glow-primary"
         >
           Finalizar ✓
         </button>
@@ -163,7 +188,7 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
       {/* Create Category Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md mx-4 space-y-4">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md mx-4 space-y-4 animate-scale-in">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">Crear nueva categoría</h3>
               <button
@@ -177,12 +202,12 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Nombre</label>
-                <input
+                <Input
                   type="text"
                   value={newCategory.name}
                   onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                  placeholder="Mi categoría"
-                  className="w-full px-3 py-2 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Ej: Mascotas, Hobbies..."
+                  className="bg-input border-border"
                 />
               </div>
 
@@ -249,19 +274,20 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
+                className="flex-1"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={createCategory}
-                disabled={isCreating}
-                className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={isCreating || !newCategory.name.trim()}
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 {isCreating ? 'Creando...' : 'Crear'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

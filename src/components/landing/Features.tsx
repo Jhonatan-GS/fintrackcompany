@@ -4,7 +4,7 @@ import {
   Bot,
   PieChart,
   Lock,
-  Smartphone,
+  MessageCircle,
 } from "lucide-react";
 
 export const Features = () => {
@@ -35,8 +35,8 @@ export const Features = () => {
       description: "Solo lectura, nunca tocamos tu dinero",
     },
     {
-      icon: Smartphone,
-      title: "Notificaciones Telegram",
+      icon: MessageCircle,
+      title: "Notificaciones WhatsApp",
       description: "Confirma gastos al instante",
     },
   ];
@@ -55,7 +55,7 @@ export const Features = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="glass-card p-5 sm:p-6 rounded-2xl hover:bg-card/80 transition-all group"
+              className="glass-card p-5 sm:p-6 rounded-2xl hover:border-primary/30 transition-all duration-300 group"
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <feature.icon className="w-6 h-6 text-primary" />
