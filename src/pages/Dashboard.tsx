@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TrendingUp, LogOut, LayoutDashboard, Receipt, BarChart3, Building2, Settings, MessageCircle } from "lucide-react";
@@ -16,7 +16,8 @@ import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import PendingConfirmations from "@/components/dashboard/PendingConfirmations";
 import MonthSelector from "@/components/dashboard/MonthSelector";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
-import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
+import { WelcomeModal } from "@/components/dashboard/WelcomeModal";
+import { EmptyChartState } from "@/components/dashboard/EmptyChartState";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -72,7 +73,14 @@ const Dashboard = () => {
     is_confirmed: t.is_confirmed
   }));
 
-  const isEmpty = !isLoading && recentTransactions.length === 0 && pendingTransactions.length === 0;
+  const isEmpty = recentTransactions.length === 0 && pendingTransactions.length === 0;
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && isEmpty) {
+      setShowWelcome(true);
+    }
+  }, [isLoading, isEmpty]);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -165,10 +173,11 @@ const Dashboard = () => {
         <div className={cn("p-4 sm:p-6 lg:p-8", isMobile && "pb-24")}>
           {isLoading ? (
             <DashboardSkeleton />
-          ) : isEmpty ? (
-            <DashboardEmptyState />
           ) : (
             <div className="space-y-6">
+              {/* Welcome Modal for empty state */}
+              <WelcomeModal open={showWelcome} onClose={() => setShowWelcome(false)} />
+
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -183,7 +192,7 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Summary Cards */}
+              {/* Summary Cards - Always visible */}
               <SummaryCards
                 income={summary.income}
                 expenses={summary.expenses}
@@ -199,10 +208,24 @@ const Dashboard = () => {
               {/* Insights */}
               {insights.length > 0 && <InsightsSection insights={insights} />}
 
-              {/* Charts Grid */}
+              {/* Charts Grid - Always visible with empty states */}
               <div className="grid lg:grid-cols-2 gap-6">
-                <ExpensesPieChart data={expensesByCategory} />
-                <TrendLineChart data={dailyTrend} />
+                {expensesByCategory.length > 0 ? (
+                  <ExpensesPieChart data={expensesByCategory} />
+                ) : (
+                  <div className="bg-card border border-border rounded-2xl p-6">
+                    <h3 className="text-foreground font-medium mb-4">Gastos por Categoría</h3>
+                    <EmptyChartState message="Las gráficas aparecerán aquí" />
+                  </div>
+                )}
+                {dailyTrend.length > 0 ? (
+                  <TrendLineChart data={dailyTrend} />
+                ) : (
+                  <div className="bg-card border border-border rounded-2xl p-6">
+                    <h3 className="text-foreground font-medium mb-4">Tendencia del Mes</h3>
+                    <EmptyChartState message="Verás tu tendencia de gastos aquí" />
+                  </div>
+                )}
               </div>
 
               {/* Category Summary Table */}
@@ -210,10 +233,18 @@ const Dashboard = () => {
                 <CategorySummaryTable data={categoryComparison} />
               )}
 
-              {/* Recent Transactions */}
-              {formattedTransactions.length > 0 && (
-                <RecentTransactions transactions={formattedTransactions} />
-              )}
+              {/* Recent Transactions - Always visible */}
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-foreground font-medium mb-4">Transacciones Recientes</h3>
+                {formattedTransactions.length > 0 ? (
+                  <RecentTransactions transactions={formattedTransactions} />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Tus transacciones aparecerán aquí</p>
+                    <p className="text-muted-foreground/70 text-sm mt-1">Sincronización activa cada 5 minutos</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
