@@ -5,6 +5,7 @@ import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Features } from "@/components/landing/Features";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
 import { Pricing } from "@/components/landing/Pricing";
+import { FAQ } from "@/components/landing/FAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/landing/Footer";
 
@@ -18,6 +19,7 @@ const Index = () => {
       <Features />
       <DashboardPreview />
       <Pricing />
+      <FAQ />
       <FinalCTA />
       <Footer />
     </div>

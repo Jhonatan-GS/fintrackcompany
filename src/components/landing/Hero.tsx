@@ -55,6 +55,7 @@ export const Hero = () => {
               <Button
                 size="lg"
                 variant="outline"
+                onClick={() => navigate("/demo")}
                 className="border-border hover:bg-muted h-12 px-8"
               >
                 Ver demo
@@ -81,7 +82,7 @@ export const Hero = () => {
           {/* Right Content - Mockup */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 blur-3xl -z-10" />
-            <div className="glass-card rounded-2xl overflow-hidden p-4">
+            <div className="glass-card rounded-2xl overflow-hidden p-4 hover:border-primary/30 transition-all duration-500">
               <img
                 src={dashboardMockup}
                 alt="Dashboard preview"
