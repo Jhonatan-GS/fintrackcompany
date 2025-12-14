@@ -46,13 +46,7 @@ export const Hero = () => {
               </Button>
             </div>
 
-            <p className="text-center sm:text-left mt-4">
-              <a href="/login" className="text-primary hover:underline text-sm">
-                Ya tengo cuenta → Iniciar sesión
-              </a>
-            </p>
-
-            <p className="text-muted-foreground/70 text-sm text-center sm:text-left">
+            <p className="text-muted-foreground/70 text-sm text-center sm:text-left mt-4">
               🎉 Más de 500 personas en la lista de espera
             </p>
 

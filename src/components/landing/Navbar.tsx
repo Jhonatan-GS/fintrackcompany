@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Menu, TrendingUp } from "lucide-react";
+import { Menu, TrendingUp, LogIn } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export const Navbar = () => {
@@ -49,14 +49,14 @@ export const Navbar = () => {
             </button>
           </div>
 
-          {/* CTA Button */}
+          {/* Login Button */}
           <div className="hidden md:block">
             <Button 
               onClick={() => navigate("/login")}
-              className="bg-primary hover:bg-primary/90 text-white font-medium px-4 sm:px-6 text-sm sm:text-base"
+              className="bg-primary hover:bg-primary/90 text-white font-medium px-4 sm:px-6 text-sm sm:text-base flex items-center gap-2"
             >
-              <span className="hidden sm:inline">Comenzar gratis</span>
-              <span className="sm:hidden">Empezar</span>
+              <LogIn className="w-4 h-4" />
+              <span>Iniciar sesión</span>
             </Button>
           </div>
 
@@ -92,10 +92,14 @@ export const Navbar = () => {
                 Precios
               </button>
               <Button 
-                onClick={() => navigate("/login")}
-                className="bg-primary hover:bg-primary/90 text-white font-medium w-full"
+                onClick={() => {
+                  navigate("/login");
+                  setIsOpen(false);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white font-medium w-full flex items-center justify-center gap-2"
               >
-                Comenzar gratis
+                <LogIn className="w-4 h-4" />
+                <span>Iniciar sesión</span>
               </Button>
             </div>
           </div>
