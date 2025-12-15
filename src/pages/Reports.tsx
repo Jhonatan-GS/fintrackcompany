@@ -40,24 +40,32 @@ const Reports = () => {
         .lt('month', endOfMonth)
         .order('total', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching spending by category:', error);
+        throw error;
+      }
+      console.log('Spending by category data:', data);
       return data;
     },
     enabled: !!user?.id
   });
 
-  // Fetch monthly summary (using date range filter)
-  const { data: monthlySummaryData } = useQuery({
-    queryKey: ['reports-summary', user?.id, month, year],
+  // Fetch all transactions for the month to calculate totals
+  const { data: transactionsData } = useQuery({
+    queryKey: ['reports-transactions', user?.id, month, year],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('v_monthly_summary')
+        .from('v_transactions_full')
         .select('*')
         .eq('user_id', user?.id)
-        .gte('month', startOfMonth)
-        .lt('month', endOfMonth);
+        .gte('email_received_at', startOfMonth)
+        .lt('email_received_at', endOfMonth);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+      console.log('Transactions for reports:', data);
       return data;
     },
     enabled: !!user?.id
@@ -75,24 +83,29 @@ const Reports = () => {
         .lte('date', endOfMonthDate)
         .order('date', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching daily balance:', error);
+        throw error;
+      }
+      console.log('Daily balance data:', data);
       return data;
     },
     enabled: !!user?.id
   });
 
-  // Calculate total expenses from monthly summary data
+  // Calculate total expenses from transactions data
   let totalExpenses = 0;
-  if (monthlySummaryData && monthlySummaryData.length > 0) {
-    monthlySummaryData.forEach(row => {
+  if (transactionsData && transactionsData.length > 0) {
+    transactionsData.forEach(row => {
       if (row.type === 'expense') {
-        totalExpenses += Number(row.total_amount) || 0;
+        totalExpenses += Number(row.amount) || 0;
       }
     });
   }
 
   const daysInMonth = new Date(year, month, 0).getDate();
-  const dailyAverage = totalExpenses / daysInMonth;
+  const currentDayOfMonth = Math.min(currentDate.getDate(), daysInMonth);
+  const dailyAverage = currentDayOfMonth > 0 ? totalExpenses / currentDayOfMonth : 0;
   const topCategory = spendingByCategory?.[0]?.category_name || 'Sin datos';
 
   const chartData = spendingByCategory?.map(cat => ({

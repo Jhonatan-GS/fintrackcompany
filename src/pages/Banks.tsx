@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Building2, Trash2 } from "lucide-react";
+import { Plus, Building2, Trash2, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -25,6 +25,11 @@ const BanksPage = () => {
   const [availableBanks, setAvailableBanks] = useState<PaymentProvider[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
+
+  const handleImageError = (bankId: string) => {
+    setFailedLogos(prev => new Set(prev).add(bankId));
+  };
 
   useEffect(() => {
     console.log('User:', user);
@@ -169,11 +174,16 @@ const BanksPage = () => {
               key={bank.id}
               className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4"
             >
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
-                {bank.payment_providers?.logo_url ? (
-                  <img src={bank.payment_providers.logo_url} alt="" className="w-8 h-8" />
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center">
+                {bank.payment_providers?.logo_url && !failedLogos.has(bank.id) ? (
+                  <img 
+                    src={bank.payment_providers.logo_url} 
+                    alt={bank.payment_providers?.name} 
+                    className="w-8 h-8 object-contain"
+                    onError={() => handleImageError(bank.id)}
+                  />
                 ) : (
-                  getBankEmoji(bank.payment_providers?.slug || '')
+                  <Building2 className="w-6 h-6 text-muted-foreground" />
                 )}
               </div>
               <div className="flex-1">
@@ -217,13 +227,18 @@ const BanksPage = () => {
                 onClick={() => handleAddBank(bank)}
                 className="p-4 rounded-xl border border-border hover:border-primary bg-muted/50 hover:bg-muted transition-colors text-left"
               >
-                <span className="text-2xl block mb-2">
-                  {bank.logo_url ? (
-                    <img src={bank.logo_url} alt="" className="w-8 h-8" />
+                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center mb-2">
+                  {bank.logo_url && !failedLogos.has(bank.id) ? (
+                    <img 
+                      src={bank.logo_url} 
+                      alt={bank.name} 
+                      className="w-7 h-7 object-contain"
+                      onError={() => handleImageError(bank.id)}
+                    />
                   ) : (
-                    getBankEmoji(bank.slug)
+                    <Building2 className="w-5 h-5 text-muted-foreground" />
                   )}
-                </span>
+                </div>
                 <span className="text-foreground text-sm font-medium">{bank.name}</span>
               </button>
             ))}
