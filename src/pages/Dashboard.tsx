@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
+// Helper to translate type for display
+const translateType = (type: 'income' | 'expense'): string => {
+  return type === 'income' ? 'Ingreso' : 'Gasto';
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -48,20 +53,20 @@ const Dashboard = () => {
     merchant: t.description || t.merchant,
     suggested_category: t.category_name || "Otros",
     suggested_emoji: t.category_icon || "📦",
-    date: t.created_at
+    date: t.email_received_at
   }));
 
   const formattedTransactions = recentTransactions.map(t => ({
     id: t.id,
     merchant: t.description || t.merchant,
     amount: t.amount,
-    date: t.created_at,
+    date: t.email_received_at,
     category_id: t.category_id || "",
     category_name: t.category_name || "Otros",
     category_emoji: t.category_icon || "📦",
     provider: t.provider_name || "Banco",
     is_confirmed: t.is_confirmed,
-    type: t.type
+    type: t.type // 'income' | 'expense'
   }));
 
   const isEmpty = recentTransactions.length === 0 && pendingTransactions.length === 0;

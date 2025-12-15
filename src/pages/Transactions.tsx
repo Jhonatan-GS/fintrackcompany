@@ -19,14 +19,19 @@ const formatCOP = (value: number) => {
   }).format(Math.abs(value));
 };
 
+// Translate type for display in Spanish
+const translateType = (type: 'income' | 'expense'): string => {
+  return type === 'income' ? 'Ingreso' : 'Gasto';
+};
+
 interface Transaction {
   id: string;
   user_id: string;
   amount: number;
-  type: 'ingreso' | 'gasto';
+  type: 'income' | 'expense';
   merchant: string | null;
   description: string | null;
-  created_at: string;
+  email_received_at: string;
   is_confirmed: boolean;
   category_id: string | null;
   category_name: string | null;
@@ -35,12 +40,12 @@ interface Transaction {
   provider_id: string | null;
   provider_name: string | null;
   reference_number: string | null;
-  notes: string | null;
+  location: string | null;
 }
 
 const Transactions = () => {
   const { user } = useAuth();
-  const [filter, setFilter] = useState<'all' | 'ingreso' | 'gasto'>('all');
+  const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
@@ -51,7 +56,7 @@ const Transactions = () => {
         .from('v_transactions_full')
         .select('*')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .order('email_received_at', { ascending: false });
       
       if (error) throw error;
       return data as Transaction[];
@@ -108,18 +113,18 @@ const Transactions = () => {
             Todas
           </Button>
           <Button
-            variant={filter === 'ingreso' ? 'default' : 'outline'}
-            onClick={() => setFilter('ingreso')}
+            variant={filter === 'income' ? 'default' : 'outline'}
+            onClick={() => setFilter('income')}
             size="sm"
-            className={filter === 'ingreso' ? 'bg-green-600 hover:bg-green-700' : ''}
+            className={filter === 'income' ? 'bg-green-600 hover:bg-green-700' : ''}
           >
             Ingresos
           </Button>
           <Button
-            variant={filter === 'gasto' ? 'default' : 'outline'}
-            onClick={() => setFilter('gasto')}
+            variant={filter === 'expense' ? 'default' : 'outline'}
+            onClick={() => setFilter('expense')}
             size="sm"
-            className={filter === 'gasto' ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={filter === 'expense' ? 'bg-red-600 hover:bg-red-700' : ''}
           >
             Gastos
           </Button>
@@ -152,7 +157,7 @@ const Transactions = () => {
         ) : (
           <div className="divide-y divide-border">
             {filteredTransactions.map((tx) => {
-              const isIncome = tx.type === 'ingreso';
+              const isIncome = tx.type === 'income';
               
               return (
                 <div
@@ -169,7 +174,7 @@ const Transactions = () => {
                         {tx.description || tx.merchant || 'Sin descripción'}
                       </p>
                       <p className="text-muted-foreground text-sm">
-                        {tx.provider_name || 'Sin banco'} • {new Date(tx.created_at).toLocaleDateString('es-CO')}
+                        {tx.provider_name || 'Sin banco'} • {new Date(tx.email_received_at).toLocaleDateString('es-CO')}
                       </p>
                     </div>
                   </div>
@@ -210,9 +215,9 @@ const Transactions = () => {
                   </p>
                   <p className={cn(
                     "text-2xl font-bold",
-                    selectedTransaction.type === 'ingreso' ? "text-green-500" : "text-red-500"
+                    selectedTransaction.type === 'income' ? "text-green-500" : "text-red-500"
                   )}>
-                    {selectedTransaction.type === 'ingreso' ? '+' : '-'}{formatCOP(selectedTransaction.amount)}
+                    {selectedTransaction.type === 'income' ? '+' : '-'}{formatCOP(selectedTransaction.amount)}
                   </p>
                 </div>
               </div>
@@ -224,7 +229,7 @@ const Transactions = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Tipo</p>
-                  <p className="text-foreground capitalize">{selectedTransaction.type}</p>
+                  <p className="text-foreground">{translateType(selectedTransaction.type)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Banco</p>
@@ -233,7 +238,7 @@ const Transactions = () => {
                 <div>
                   <p className="text-muted-foreground">Fecha</p>
                   <p className="text-foreground">
-                    {new Date(selectedTransaction.created_at).toLocaleDateString('es-CO', {
+                    {new Date(selectedTransaction.email_received_at).toLocaleDateString('es-CO', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric'
@@ -258,10 +263,10 @@ const Transactions = () => {
                     <p className="text-foreground font-mono text-xs">{selectedTransaction.reference_number}</p>
                   </div>
                 )}
-                {selectedTransaction.notes && (
+                {selectedTransaction.location && (
                   <div className="col-span-2">
-                    <p className="text-muted-foreground">Notas</p>
-                    <p className="text-foreground">{selectedTransaction.notes}</p>
+                    <p className="text-muted-foreground">Ubicación</p>
+                    <p className="text-foreground">{selectedTransaction.location}</p>
                   </div>
                 )}
               </div>
