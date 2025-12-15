@@ -53,8 +53,8 @@ const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
   return (
     <div className="space-y-3">
       {transactions.slice(0, 5).map((transaction) => {
-        // Check for 'income' type (database value)
-        const isIncome = transaction.type === 'income' || transaction.amount >= 0;
+        // Check for 'income' type (database value) - only trust type field
+        const isIncome = transaction.type === 'income';
         
         return (
           <div

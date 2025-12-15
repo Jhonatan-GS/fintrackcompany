@@ -54,11 +54,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('👤 User ID:', session.user.id);
       }
 
-      // Handle successful sign in
+      // Handle successful sign in - only redirect if on login or landing page
       if (event === "SIGNED_IN" && session) {
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 0);
+        const currentPath = window.location.pathname;
+        const publicPaths = ['/', '/login', '/auth/callback'];
+        if (publicPaths.includes(currentPath)) {
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 0);
+        }
       }
     });
 
