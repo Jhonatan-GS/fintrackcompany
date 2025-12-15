@@ -7,9 +7,9 @@ export interface Transaction {
   id: string;
   user_id: string;
   amount: number;
-  merchant: string;
+  merchant: string | null;
   description: string | null;
-  transaction_date: string;
+  created_at: string;
   type: 'ingreso' | 'gasto';
   is_confirmed: boolean;
   category_id: string | null;
@@ -18,6 +18,7 @@ export interface Transaction {
     name: string;
     icon: string;
     color: string;
+    is_income: boolean;
   } | null;
   payment_providers?: {
     name: string;
@@ -60,13 +61,13 @@ export const useDashboardData = (selectedMonth?: Date) => {
         .from('transactions')
         .select(`
           *,
-          categories:category_id (name, icon, color),
+          categories:category_id (name, icon, color, is_income),
           payment_providers:provider_id (name)
         `)
         .eq('user_id', user?.id)
-        .gte('transaction_date', startOfMonth.toISOString())
-        .lte('transaction_date', endOfMonth.toISOString())
-        .order('transaction_date', { ascending: false });
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
+        .order('created_at', { ascending: false });
       
       console.log('Transactions data:', data);
       console.log('Transactions error:', error);
@@ -83,11 +84,11 @@ export const useDashboardData = (selectedMonth?: Date) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
-        .select('amount, type, category_id, categories (name)')
+        .select('amount, type, category_id, categories:category_id (name)')
         .eq('user_id', user?.id)
         .eq('type', 'gasto')
-        .gte('transaction_date', startOfPrevMonth.toISOString())
-        .lte('transaction_date', endOfPrevMonth.toISOString());
+        .gte('created_at', startOfPrevMonth.toISOString())
+        .lte('created_at', endOfPrevMonth.toISOString());
       
       if (error) throw error;
       return data;
@@ -150,7 +151,7 @@ export const useDashboardData = (selectedMonth?: Date) => {
     
     // Get last 7 days or days with data
     transactions.forEach(t => {
-      const date = new Date(t.transaction_date);
+      const date = new Date(t.created_at);
       const dayKey = date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
       
       const current = dailyMap.get(dayKey) || { day: dayKey, gastos: 0, ingresos: 0 };

@@ -16,6 +16,7 @@ const formatCOP = (value: number) => {
 };
 
 const formatDate = (dateString: string) => {
+  if (!dateString) return '';
   return new Date(dateString).toLocaleDateString('es-CO', {
     day: 'numeric',
     month: 'short',
@@ -125,7 +126,7 @@ const TransactionsPage = () => {
                   <div>
                     <p className="text-foreground font-medium">{transaction.merchant || 'Sin comercio'}</p>
                     <p className="text-muted-foreground text-sm">
-                      {transaction.categories?.name || 'Sin categoría'} • {formatDate(transaction.transaction_date)}
+                      {transaction.categories?.name || 'Sin categoría'} • {formatDate(transaction.created_at)}
                     </p>
                   </div>
                 </div>
