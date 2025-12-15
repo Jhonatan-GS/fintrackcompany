@@ -45,17 +45,23 @@ export const useDashboardData = (selectedMonth?: Date) => {
   const month = currentMonth.getMonth() + 1; // 1-12
   const year = currentMonth.getFullYear();
 
-  // Calculate date ranges for filtering
-  const startOfMonth = new Date(year, month - 1, 1).toISOString();
-  const endOfMonth = new Date(year, month, 0, 23, 59, 59).toISOString();
-  const startOfMonthDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-  const endOfMonthDate = new Date(year, month, 0).toISOString().split('T')[0];
+  // Calculate date ranges for filtering - use start of current day to avoid timezone issues
+  const startOfMonthDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDayOfMonth = new Date(year, month, 0).getDate();
+  const endOfMonthDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+  
+  // ISO timestamps for views that need them
+  const startOfMonth = `${startOfMonthDate}T00:00:00.000Z`;
+  const endOfMonth = `${endOfMonthDate}T23:59:59.999Z`;
 
   // Previous month dates
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;
-  const prevStartOfMonth = new Date(prevYear, prevMonth - 1, 1).toISOString();
-  const prevEndOfMonth = new Date(prevYear, prevMonth, 0, 23, 59, 59).toISOString();
+  const prevLastDay = new Date(prevYear, prevMonth, 0).getDate();
+  const prevStartOfMonthDate = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+  const prevEndOfMonthDate = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(prevLastDay).padStart(2, '0')}`;
+  const prevStartOfMonth = `${prevStartOfMonthDate}T00:00:00.000Z`;
+  const prevEndOfMonth = `${prevEndOfMonthDate}T23:59:59.999Z`;
 
   // Fetch transactions using the VIEW (already has JOINs)
   const { data: transactions, isLoading: loadingTransactions, refetch, dataUpdatedAt } = useQuery({

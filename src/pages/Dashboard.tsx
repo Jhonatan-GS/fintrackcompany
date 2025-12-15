@@ -143,14 +143,16 @@ const Dashboard = () => {
 
       {/* Recent Transactions - moved before charts */}
       <div className="bg-card border border-border rounded-2xl p-6">
-        <h3 className="text-foreground font-medium mb-4">Transacciones Recientes</h3>
         {formattedTransactions.length > 0 ? (
-          <RecentTransactions transactions={formattedTransactions} />
+          <RecentTransactions transactions={formattedTransactions} showHeader />
         ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Tus transacciones aparecerán aquí</p>
-            <p className="text-muted-foreground/70 text-sm mt-1">Sincronización activa cada 30 segundos</p>
-          </div>
+          <>
+            <h3 className="text-foreground font-medium mb-4">Transacciones Recientes</h3>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Tus transacciones aparecerán aquí</p>
+              <p className="text-muted-foreground/70 text-sm mt-1">Sincronización activa cada 30 segundos</p>
+            </div>
+          </>
         )}
       </div>
 

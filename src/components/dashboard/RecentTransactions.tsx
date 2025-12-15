@@ -17,6 +17,7 @@ interface Transaction {
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  showHeader?: boolean;
 }
 
 const formatCOP = (value: number) => {
@@ -47,11 +48,25 @@ const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength) + '...';
 };
 
-const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
+const RecentTransactions = ({ transactions, showHeader = false }: RecentTransactionsProps) => {
   const navigate = useNavigate();
   
   return (
     <div className="space-y-3">
+      {showHeader && (
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-foreground font-medium">Transacciones Recientes</h3>
+          {transactions.length > 0 && (
+            <button 
+              onClick={() => navigate('/transactions')}
+              className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+            >
+              Ver todas <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+      
       {transactions.slice(0, 5).map((transaction) => {
         // Check for 'income' type (database value) - only trust type field
         const isIncome = transaction.type === 'income';
@@ -89,7 +104,7 @@ const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
         );
       })}
 
-      {transactions.length > 0 && (
+      {!showHeader && transactions.length > 0 && (
         <button 
           onClick={() => navigate('/transactions')}
           className="w-full text-sm text-primary hover:text-primary/80 flex items-center justify-center gap-1 py-2 transition-colors"
