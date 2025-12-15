@@ -1,25 +1,61 @@
 import { ArrowRight } from "lucide-react";
-import { Transaction, formatCOP, formatRelativeDate } from "@/data/mockData";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+interface Transaction {
+  id: string;
+  merchant: string | null;
+  amount: number;
+  date: string;
+  category_name: string;
+  category_emoji: string;
+  provider: string;
+  is_confirmed: boolean;
+  type?: 'ingreso' | 'gasto';
+}
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
+const formatCOP = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+};
+
+const formatRelativeDate = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Ayer';
+  if (diffDays < 7) return `Hace ${diffDays} días`;
+  return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+};
+
+const truncateText = (text: string, maxLength: number) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
 const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
+  const navigate = useNavigate();
+  
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          📝 Últimas Transacciones
-        </h3>
-        <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
-          Ver todas <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-      
-      <div className="space-y-3">
-        {transactions.slice(0, 5).map((transaction) => (
+    <div className="space-y-3">
+      {transactions.slice(0, 5).map((transaction) => {
+        const isIncome = transaction.type === 'ingreso' || transaction.amount >= 0;
+        
+        return (
           <div
             key={transaction.id}
             className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -29,28 +65,37 @@ const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
                 {transaction.category_emoji}
               </div>
               <div>
-                <p className="font-medium text-foreground">{transaction.merchant}</p>
+                <p className="font-medium text-foreground">
+                  {truncateText(transaction.merchant || 'Sin descripción', 30)}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {transaction.provider} • {formatRelativeDate(transaction.date)}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p
-                className={`font-semibold ${
-                  transaction.amount >= 0 ? "text-emerald-400" : "text-foreground"
-                }`}
-              >
-                {transaction.amount >= 0 ? "+" : ""}
-                {formatCOP(transaction.amount)}
+              <p className={cn(
+                "font-semibold",
+                isIncome ? "text-green-500" : "text-red-500"
+              )}>
+                {isIncome ? "+" : "-"}{formatCOP(Math.abs(transaction.amount))}
               </p>
               <Badge variant="secondary" className="text-xs mt-1">
                 {transaction.category_name}
               </Badge>
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
+
+      {transactions.length > 0 && (
+        <button 
+          onClick={() => navigate('/transactions')}
+          className="w-full text-sm text-primary hover:text-primary/80 flex items-center justify-center gap-1 py-2 transition-colors"
+        >
+          Ver todas <ArrowRight className="w-4 h-4" />
+        </button>
+      )}
 
       {transactions.length === 0 && (
         <div className="text-center py-8">

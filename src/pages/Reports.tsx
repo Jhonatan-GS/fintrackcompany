@@ -118,7 +118,7 @@ const ReportsPage = () => {
           <div className="space-y-4">
             {expensesByCategory.map((cat, index) => (
               <div key={index} className="flex items-center gap-4">
-                <span className="text-2xl">{cat.emoji}</span>
+                <span className="text-2xl">{cat.emoji || '📦'}</span>
                 <div className="flex-1">
                   <div className="flex justify-between mb-1">
                     <span className="text-foreground">{cat.name}</span>

@@ -66,17 +66,25 @@ const Dashboard = () => {
     category_name: t.categories?.name || "Otros",
     category_emoji: t.categories?.icon || "📦",
     provider: t.payment_providers?.name || "Banco",
-    is_confirmed: t.is_confirmed
+    is_confirmed: t.is_confirmed,
+    type: t.type
   }));
 
   const isEmpty = recentTransactions.length === 0 && pendingTransactions.length === 0;
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && isEmpty) {
+    // Only show welcome modal once (stored in localStorage)
+    const hasSeenWelcome = localStorage.getItem('fintrack_welcome_seen');
+    if (!isLoading && isEmpty && !hasSeenWelcome) {
       setShowWelcome(true);
     }
   }, [isLoading, isEmpty]);
+
+  const handleCloseWelcome = () => {
+    localStorage.setItem('fintrack_welcome_seen', 'true');
+    setShowWelcome(false);
+  };
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -85,7 +93,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Modal for empty state */}
-      <WelcomeModal open={showWelcome} onClose={() => setShowWelcome(false)} />
+      <WelcomeModal open={showWelcome} onClose={handleCloseWelcome} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
