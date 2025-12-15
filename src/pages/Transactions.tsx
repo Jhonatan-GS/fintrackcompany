@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useDashboardData, Transaction } from "@/hooks/useDashboardData";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const formatCOP = (value: number) => {
   return new Intl.NumberFormat('es-CO', {
@@ -26,16 +32,15 @@ const formatDate = (dateString: string) => {
 
 const TransactionsPage = () => {
   const { transactions, isLoading } = useDashboardData();
-  const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [filter, setFilter] = useState<'all' | 'ingreso' | 'gasto'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const filteredTransactions = useMemo(() => {
     let result = transactions || [];
     
-    if (filter === 'income') {
-      result = result.filter(t => t.type === 'ingreso');
-    } else if (filter === 'expense') {
-      result = result.filter(t => t.type === 'gasto');
+    if (filter !== 'all') {
+      result = result.filter(t => t.type === filter);
     }
     
     if (searchTerm) {
@@ -77,18 +82,18 @@ const TransactionsPage = () => {
             Todas
           </Button>
           <Button
-            variant={filter === 'income' ? 'default' : 'outline'}
-            onClick={() => setFilter('income')}
+            variant={filter === 'ingreso' ? 'default' : 'outline'}
+            onClick={() => setFilter('ingreso')}
             size="sm"
-            className={filter === 'income' ? 'bg-green-600 hover:bg-green-700' : ''}
+            className={filter === 'ingreso' ? 'bg-green-600 hover:bg-green-700' : ''}
           >
             Ingresos
           </Button>
           <Button
-            variant={filter === 'expense' ? 'default' : 'outline'}
-            onClick={() => setFilter('expense')}
+            variant={filter === 'gasto' ? 'default' : 'outline'}
+            onClick={() => setFilter('gasto')}
             size="sm"
-            className={filter === 'expense' ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={filter === 'gasto' ? 'bg-red-600 hover:bg-red-700' : ''}
           >
             Gastos
           </Button>
@@ -114,35 +119,41 @@ const TransactionsPage = () => {
           </div>
         ) : filteredTransactions.length > 0 ? (
           <div className="divide-y divide-border">
-            {filteredTransactions.map((transaction) => (
-              <div 
-                key={transaction.id} 
-                className="p-4 hover:bg-muted/50 transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                    <span className="text-lg">{transaction.categories?.icon || '📦'}</span>
+            {filteredTransactions.map((transaction) => {
+              const isIncome = transaction.type === 'ingreso';
+              return (
+                <div 
+                  key={transaction.id} 
+                  onClick={() => setSelectedTransaction(transaction)}
+                  className="p-4 hover:bg-muted/50 transition-colors flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                      <span className="text-lg">{transaction.categories?.icon || '📦'}</span>
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">
+                        {transaction.description || transaction.merchant || 'Sin descripción'}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        {transaction.categories?.name || 'Sin categoría'} • {formatDate(transaction.created_at)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-foreground font-medium">{transaction.merchant || 'Sin comercio'}</p>
-                    <p className="text-muted-foreground text-sm">
-                      {transaction.categories?.name || 'Sin categoría'} • {formatDate(transaction.created_at)}
+                  <div className="text-right">
+                    <p className={cn(
+                      "font-semibold",
+                      isIncome ? 'text-green-500' : 'text-red-500'
+                    )}>
+                      {isIncome ? '+' : '-'}{formatCOP(Math.abs(transaction.amount))}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {transaction.is_confirmed ? '✓ Confirmada' : '⏳ Pendiente'}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={cn(
-                    "font-semibold",
-                    transaction.type === 'ingreso' ? 'text-green-500' : 'text-red-500'
-                  )}>
-                    {transaction.type === 'ingreso' ? '+' : '-'}{formatCOP(Math.abs(transaction.amount))}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {transaction.is_confirmed ? '✓ Confirmada' : '⏳ Pendiente'}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="p-12 text-center">
@@ -152,6 +163,63 @@ const TransactionsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Transaction Detail Modal */}
+      <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Detalle de Transacción</DialogTitle>
+          </DialogHeader>
+          
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="text-4xl">{selectedTransaction.categories?.icon || '📦'}</span>
+                <div>
+                  <p className="text-foreground text-lg font-medium">
+                    {selectedTransaction.description || selectedTransaction.merchant || 'Sin descripción'}
+                  </p>
+                  <p className={cn(
+                    "text-2xl font-bold",
+                    selectedTransaction.type === 'ingreso' ? 'text-green-500' : 'text-red-500'
+                  )}>
+                    {selectedTransaction.type === 'ingreso' ? '+' : '-'}{formatCOP(Math.abs(selectedTransaction.amount))}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Categoría</p>
+                  <p className="text-foreground">{selectedTransaction.categories?.name || 'Sin categoría'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Tipo</p>
+                  <p className="text-foreground capitalize">{selectedTransaction.type}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Banco</p>
+                  <p className="text-foreground">{selectedTransaction.payment_providers?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Fecha</p>
+                  <p className="text-foreground">{formatDate(selectedTransaction.created_at)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Comercio</p>
+                  <p className="text-foreground">{selectedTransaction.merchant || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Estado</p>
+                  <p className={selectedTransaction.is_confirmed ? 'text-green-500' : 'text-yellow-500'}>
+                    {selectedTransaction.is_confirmed ? '✓ Confirmada' : '⏳ Pendiente'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
