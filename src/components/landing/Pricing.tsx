@@ -92,10 +92,9 @@ export const Pricing = () => {
             <div className="text-center mb-5 mt-3">
               <h3 className="text-lg sm:text-xl font-bold mb-2">Pro</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl sm:text-4xl font-bold text-gradient">$15.000</span>
-                <span className="text-muted-foreground text-xs">/mes</span>
+                <span className="text-3xl sm:text-4xl font-bold text-gradient">$5</span>
+                <span className="text-muted-foreground text-xs">USD/mes</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">COP</p>
             </div>
 
             <ul className="space-y-2.5 mb-5 flex-grow">
@@ -120,41 +119,43 @@ export const Pricing = () => {
             </p>
           </div>
 
-          {/* Plan Familia */}
-          <div className="glass-card p-5 sm:p-6 rounded-2xl border border-border relative overflow-hidden flex flex-col">
+          {/* Plan Familia - Próximamente */}
+          <div className="glass-card p-5 sm:p-6 rounded-2xl border border-border relative overflow-hidden flex flex-col opacity-80">
             <div className="absolute top-2 right-2">
-              <div className="flex items-center gap-1 bg-secondary text-foreground px-2 py-0.5 rounded-full text-xs font-semibold">
-                <Users className="w-3 h-3" />
-                Familia
+              <div className="flex items-center gap-1 bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-xs font-semibold">
+                <Clock className="w-3 h-3" />
+                Próximamente
               </div>
             </div>
 
             <div className="text-center mb-5 mt-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
+                <Users className="w-5 h-5 text-muted-foreground" />
+              </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2">Familia</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl sm:text-4xl font-bold">$25.000</span>
-                <span className="text-muted-foreground text-xs">/mes</span>
+                <span className="text-3xl sm:text-4xl font-bold text-muted-foreground">$9</span>
+                <span className="text-muted-foreground text-xs">USD/mes</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">COP</p>
             </div>
 
             <ul className="space-y-2.5 mb-5 flex-grow">
               {familyFeatures.map((feature, index) => (
                 <li key={index} className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-2.5 h-2.5 text-primary" />
+                  <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <Check className="w-2.5 h-2.5 text-muted-foreground" />
                   </div>
-                  <span className="text-foreground text-xs sm:text-sm">{feature}</span>
+                  <span className="text-muted-foreground text-xs sm:text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
 
             <Button 
-              onClick={() => navigate("/login")}
+              disabled
               variant="outline"
-              className="w-full border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-10 transition-all text-sm"
+              className="w-full font-semibold h-10 text-sm"
             >
-              Elegir plan
+              Próximamente
             </Button>
           </div>
 
