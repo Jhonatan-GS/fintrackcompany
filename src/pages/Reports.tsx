@@ -23,35 +23,14 @@ const Reports = () => {
   const year = currentDate.getFullYear();
 
   // Calculate date ranges for filtering
-  const startOfMonth = new Date(year, month - 1, 1).toISOString();
-  const endOfMonth = new Date(year, month, 0, 23, 59, 59).toISOString();
-  const startOfMonthDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-  const endOfMonthDate = new Date(year, month, 0).toISOString().split('T')[0];
+  const startOfMonthDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDayOfMonth = new Date(year, month, 0).getDate();
+  const endOfMonthDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+  const startOfMonth = `${startOfMonthDate}T00:00:00.000Z`;
+  const endOfMonth = `${endOfMonthDate}T23:59:59.999Z`;
 
-  // Fetch spending by category (using date range filter)
-  const { data: spendingByCategory } = useQuery({
-    queryKey: ['reports-spending', user?.id, month, year],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_spending_by_category')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('month', startOfMonth)
-        .lt('month', endOfMonth)
-        .order('total', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching spending by category:', error);
-        throw error;
-      }
-      console.log('Spending by category data:', data);
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  // Fetch all transactions for the month to calculate totals
-  const { data: transactionsData } = useQuery({
+  // Fetch all transactions for the month to calculate all data
+  const { data: transactionsData, isLoading } = useQuery({
     queryKey: ['reports-transactions', user?.id, month, year],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -59,7 +38,7 @@ const Reports = () => {
         .select('*')
         .eq('user_id', user?.id)
         .gte('email_received_at', startOfMonth)
-        .lt('email_received_at', endOfMonth);
+        .lte('email_received_at', endOfMonth);
       
       if (error) {
         console.error('Error fetching transactions:', error);
@@ -93,33 +72,59 @@ const Reports = () => {
     enabled: !!user?.id
   });
 
-  // Calculate total expenses from transactions data
+  // Calculate all metrics from transactions
   let totalExpenses = 0;
+  const categoryMap = new Map<string, {
+    category_name: string;
+    icon: string;
+    color: string;
+    total: number;
+  }>();
+
   if (transactionsData && transactionsData.length > 0) {
     transactionsData.forEach(row => {
       if (row.type === 'expense') {
-        totalExpenses += Number(row.amount) || 0;
+        const amount = Math.abs(Number(row.amount)) || 0;
+        totalExpenses += amount;
+        
+        const catName = row.category_name || 'Otros';
+        const existing = categoryMap.get(catName);
+        if (existing) {
+          existing.total += amount;
+        } else {
+          categoryMap.set(catName, {
+            category_name: catName,
+            icon: row.category_icon || '📦',
+            color: row.category_color || '#6B7280',
+            total: amount
+          });
+        }
       }
     });
   }
 
+  // Convert to array and sort
+  const spendingByCategory = Array.from(categoryMap.values())
+    .sort((a, b) => b.total - a.total);
+
   const daysInMonth = new Date(year, month, 0).getDate();
   const currentDayOfMonth = Math.min(currentDate.getDate(), daysInMonth);
   const dailyAverage = currentDayOfMonth > 0 ? totalExpenses / currentDayOfMonth : 0;
-  const topCategory = spendingByCategory?.[0]?.category_name || 'Sin datos';
+  const topCategory = spendingByCategory[0]?.category_name || 'Sin datos';
 
-  const chartData = spendingByCategory?.map(cat => ({
+  const chartData = spendingByCategory.map(cat => ({
     name: cat.category_name,
-    value: Number(cat.total) || 0,
-    emoji: cat.icon || '📦',
-    color: cat.color || '#6B7280'
-  })) || [];
+    value: cat.total,
+    emoji: cat.icon,
+    color: cat.color
+  }));
 
   const barData = dailyBalance?.map(day => ({
     date: new Date(day.date).toLocaleDateString('es-CO', { day: 'numeric' }),
     gastos: Number(day.total_expense) || 0,
     ingresos: Number(day.total_income) || 0
   })) || [];
+
 
   return (
     <div className="space-y-6">
