@@ -22,7 +22,13 @@ const Reports = () => {
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
 
-  // Fetch spending by category
+  // Calculate date ranges for filtering
+  const startOfMonth = new Date(year, month - 1, 1).toISOString();
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59).toISOString();
+  const startOfMonthDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+  const endOfMonthDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+  // Fetch spending by category (using date range filter)
   const { data: spendingByCategory } = useQuery({
     queryKey: ['reports-spending', user?.id, month, year],
     queryFn: async () => {
@@ -30,9 +36,9 @@ const Reports = () => {
         .from('v_spending_by_category')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('month', month)
-        .eq('year', year)
-        .order('total_amount', { ascending: false });
+        .gte('month', startOfMonth)
+        .lt('month', endOfMonth)
+        .order('total', { ascending: false });
       
       if (error) throw error;
       return data;
@@ -40,17 +46,16 @@ const Reports = () => {
     enabled: !!user?.id
   });
 
-  // Fetch monthly summary
-  const { data: monthlySummary } = useQuery({
+  // Fetch monthly summary (using date range filter)
+  const { data: monthlySummaryData } = useQuery({
     queryKey: ['reports-summary', user?.id, month, year],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_monthly_summary')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('month', month)
-        .eq('year', year)
-        .maybeSingle();
+        .gte('month', startOfMonth)
+        .lt('month', endOfMonth);
       
       if (error) throw error;
       return data;
@@ -62,15 +67,12 @@ const Reports = () => {
   const { data: dailyBalance } = useQuery({
     queryKey: ['reports-daily', user?.id, month, year],
     queryFn: async () => {
-      const startOfMonth = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
-      
       const { data, error } = await supabase
         .from('v_daily_balance')
         .select('*')
         .eq('user_id', user?.id)
-        .gte('date', startOfMonth)
-        .lte('date', endOfMonth)
+        .gte('date', startOfMonthDate)
+        .lte('date', endOfMonthDate)
         .order('date', { ascending: true });
       
       if (error) throw error;
@@ -79,22 +81,31 @@ const Reports = () => {
     enabled: !!user?.id
   });
 
-  const totalExpenses = Number(monthlySummary?.total_expenses) || 0;
+  // Calculate total expenses from monthly summary data
+  let totalExpenses = 0;
+  if (monthlySummaryData && monthlySummaryData.length > 0) {
+    monthlySummaryData.forEach(row => {
+      if (row.type === 'expense') {
+        totalExpenses += Number(row.total_amount) || 0;
+      }
+    });
+  }
+
   const daysInMonth = new Date(year, month, 0).getDate();
   const dailyAverage = totalExpenses / daysInMonth;
   const topCategory = spendingByCategory?.[0]?.category_name || 'Sin datos';
 
   const chartData = spendingByCategory?.map(cat => ({
     name: cat.category_name,
-    value: Number(cat.total_amount),
-    emoji: cat.category_icon || '📦',
-    color: cat.category_color || '#6B7280'
+    value: Number(cat.total) || 0,
+    emoji: cat.icon || '📦',
+    color: cat.color || '#6B7280'
   })) || [];
 
   const barData = dailyBalance?.map(day => ({
     date: new Date(day.date).toLocaleDateString('es-CO', { day: 'numeric' }),
-    gastos: Number(day.daily_expenses) || 0,
-    ingresos: Number(day.daily_income) || 0
+    gastos: Number(day.total_expense) || 0,
+    ingresos: Number(day.total_income) || 0
   })) || [];
 
   return (
@@ -203,8 +214,8 @@ const Reports = () => {
                     formatter={(value: number) => formatCOP(value)}
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
                   />
-                  <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="gastos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Gastos" />
+                  <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} name="Ingresos" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -222,21 +233,22 @@ const Reports = () => {
         {spendingByCategory && spendingByCategory.length > 0 ? (
           <div className="space-y-3">
             {spendingByCategory.map((cat, index) => {
-              const percentage = totalExpenses > 0 ? (Number(cat.total_amount) / totalExpenses) * 100 : 0;
+              const catTotal = Number(cat.total) || 0;
+              const percentage = totalExpenses > 0 ? (catTotal / totalExpenses) * 100 : 0;
               return (
                 <div key={index} className="flex items-center gap-4">
-                  <span className="text-2xl w-8">{cat.category_icon || '📦'}</span>
+                  <span className="text-2xl w-8">{cat.icon || '📦'}</span>
                   <div className="flex-1">
                     <div className="flex justify-between mb-1">
                       <span className="text-foreground">{cat.category_name}</span>
-                      <span className="text-muted-foreground">{formatCOP(Number(cat.total_amount))}</span>
+                      <span className="text-muted-foreground">{formatCOP(catTotal)}</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div 
                         className="h-full rounded-full"
                         style={{ 
                           width: `${percentage}%`,
-                          backgroundColor: cat.category_color || '#6B7280'
+                          backgroundColor: cat.color || '#6B7280'
                         }}
                       />
                     </div>

@@ -12,7 +12,7 @@ interface Transaction {
   category_emoji: string;
   provider: string;
   is_confirmed: boolean;
-  type?: 'ingreso' | 'gasto';
+  type?: 'income' | 'expense';
 }
 
 interface RecentTransactionsProps {
@@ -53,7 +53,8 @@ const RecentTransactions = ({ transactions }: RecentTransactionsProps) => {
   return (
     <div className="space-y-3">
       {transactions.slice(0, 5).map((transaction) => {
-        const isIncome = transaction.type === 'ingreso' || transaction.amount >= 0;
+        // Check for 'income' type (database value)
+        const isIncome = transaction.type === 'income' || transaction.amount >= 0;
         
         return (
           <div

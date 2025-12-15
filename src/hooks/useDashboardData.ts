@@ -8,10 +8,10 @@ export interface Transaction {
   user_id: string;
   amount: number;
   currency: string;
-  type: 'ingreso' | 'gasto';
+  type: 'income' | 'expense';
   merchant: string | null;
   description: string | null;
-  created_at: string;
+  email_received_at: string;
   is_confirmed: boolean;
   category_id: string | null;
   category_name: string | null;
@@ -20,7 +20,10 @@ export interface Transaction {
   provider_id: string | null;
   provider_name: string | null;
   reference_number: string | null;
-  notes: string | null;
+  location: string | null;
+  ai_confidence_score: number | null;
+  suggested_category_name: string | null;
+  created_at: string;
 }
 
 export interface CategoryExpense {
@@ -42,22 +45,31 @@ export const useDashboardData = (selectedMonth?: Date) => {
   const month = currentMonth.getMonth() + 1; // 1-12
   const year = currentMonth.getFullYear();
 
+  // Calculate date ranges for filtering
+  const startOfMonth = new Date(year, month - 1, 1).toISOString();
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59).toISOString();
+  const startOfMonthDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+  const endOfMonthDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+  // Previous month dates
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevStartOfMonth = new Date(prevYear, prevMonth - 1, 1).toISOString();
+  const prevEndOfMonth = new Date(prevYear, prevMonth, 0, 23, 59, 59).toISOString();
+
   // Fetch transactions using the VIEW (already has JOINs)
   const { data: transactions, isLoading: loadingTransactions, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['transactions', user?.id, month, year],
     queryFn: async () => {
       console.log('Fetching from v_transactions_full for user:', user?.id, 'month:', month, 'year:', year);
       
-      const startOfMonth = new Date(year, month - 1, 1).toISOString();
-      const endOfMonth = new Date(year, month, 0, 23, 59, 59).toISOString();
-      
       const { data, error } = await supabase
         .from('v_transactions_full')
         .select('*')
         .eq('user_id', user?.id)
-        .gte('created_at', startOfMonth)
-        .lte('created_at', endOfMonth)
-        .order('created_at', { ascending: false });
+        .gte('email_received_at', startOfMonth)
+        .lte('email_received_at', endOfMonth)
+        .order('email_received_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching transactions:', error);
@@ -73,17 +85,16 @@ export const useDashboardData = (selectedMonth?: Date) => {
     staleTime: 10000
   });
 
-  // Fetch monthly summary using the VIEW
-  const { data: monthlySummary } = useQuery({
+  // Fetch monthly summary using the VIEW (filter by month timestamp range)
+  const { data: monthlySummaryData } = useQuery({
     queryKey: ['monthly-summary', user?.id, month, year],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_monthly_summary')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('month', month)
-        .eq('year', year)
-        .maybeSingle();
+        .gte('month', startOfMonth)
+        .lt('month', endOfMonth);
       
       if (error) {
         console.error('Error fetching monthly summary:', error);
@@ -95,19 +106,15 @@ export const useDashboardData = (selectedMonth?: Date) => {
   });
 
   // Fetch previous month summary for comparison
-  const prevMonth = month === 1 ? 12 : month - 1;
-  const prevYear = month === 1 ? year - 1 : year;
-  
-  const { data: prevMonthlySummary } = useQuery({
+  const { data: prevMonthlySummaryData } = useQuery({
     queryKey: ['monthly-summary-prev', user?.id, prevMonth, prevYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_monthly_summary')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('month', prevMonth)
-        .eq('year', prevYear)
-        .maybeSingle();
+        .gte('month', prevStartOfMonth)
+        .lt('month', prevEndOfMonth);
       
       if (error) {
         console.error('Error fetching prev monthly summary:', error);
@@ -118,7 +125,7 @@ export const useDashboardData = (selectedMonth?: Date) => {
     enabled: !!user?.id
   });
 
-  // Fetch spending by category using the VIEW
+  // Fetch spending by category using the VIEW (filter by month timestamp range)
   const { data: spendingByCategory } = useQuery({
     queryKey: ['spending-by-category', user?.id, month, year],
     queryFn: async () => {
@@ -126,9 +133,9 @@ export const useDashboardData = (selectedMonth?: Date) => {
         .from('v_spending_by_category')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('month', month)
-        .eq('year', year)
-        .order('total_amount', { ascending: false });
+        .gte('month', startOfMonth)
+        .lt('month', endOfMonth)
+        .order('total', { ascending: false });
       
       if (error) {
         console.error('Error fetching spending by category:', error);
@@ -143,15 +150,12 @@ export const useDashboardData = (selectedMonth?: Date) => {
   const { data: dailyBalance } = useQuery({
     queryKey: ['daily-balance', user?.id, month, year],
     queryFn: async () => {
-      const startOfMonth = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
-      
       const { data, error } = await supabase
         .from('v_daily_balance')
         .select('*')
         .eq('user_id', user?.id)
-        .gte('date', startOfMonth)
-        .lte('date', endOfMonth)
+        .gte('date', startOfMonthDate)
+        .lte('date', endOfMonthDate)
         .order('date', { ascending: true });
       
       if (error) {
@@ -165,12 +169,33 @@ export const useDashboardData = (selectedMonth?: Date) => {
 
   // Calculate summary from the monthly summary view
   const summary = useMemo(() => {
-    if (monthlySummary) {
+    // Aggregate monthly summary data (may have multiple rows for income/expense types)
+    if (monthlySummaryData && monthlySummaryData.length > 0) {
+      let income = 0;
+      let expenses = 0;
+      
+      monthlySummaryData.forEach(row => {
+        if (row.type === 'income') {
+          income += Number(row.total_amount) || 0;
+        } else if (row.type === 'expense') {
+          expenses += Number(row.total_amount) || 0;
+        }
+      });
+
+      let prevExpenses = 0;
+      if (prevMonthlySummaryData && prevMonthlySummaryData.length > 0) {
+        prevMonthlySummaryData.forEach(row => {
+          if (row.type === 'expense') {
+            prevExpenses += Number(row.total_amount) || 0;
+          }
+        });
+      }
+      
       return {
-        income: Number(monthlySummary.total_income) || 0,
-        expenses: Number(monthlySummary.total_expenses) || 0,
-        balance: Number(monthlySummary.balance) || 0,
-        previousMonthExpenses: Number(prevMonthlySummary?.total_expenses) || 0
+        income,
+        expenses,
+        balance: income - expenses,
+        previousMonthExpenses: prevExpenses
       };
     }
     
@@ -180,29 +205,38 @@ export const useDashboardData = (selectedMonth?: Date) => {
     }
     
     const income = transactions
-      .filter(t => t.type === 'ingreso')
+      .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
     
     const expenses = transactions
-      .filter(t => t.type === 'gasto')
+      .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+    let prevExpenses = 0;
+    if (prevMonthlySummaryData && prevMonthlySummaryData.length > 0) {
+      prevMonthlySummaryData.forEach(row => {
+        if (row.type === 'expense') {
+          prevExpenses += Number(row.total_amount) || 0;
+        }
+      });
+    }
     
     return {
       income,
       expenses,
       balance: income - expenses,
-      previousMonthExpenses: Number(prevMonthlySummary?.total_expenses) || 0
+      previousMonthExpenses: prevExpenses
     };
-  }, [monthlySummary, prevMonthlySummary, transactions]);
+  }, [monthlySummaryData, prevMonthlySummaryData, transactions]);
 
   // Format expenses by category for pie chart
   const expensesByCategory = useMemo((): CategoryExpense[] => {
     if (spendingByCategory && spendingByCategory.length > 0) {
       return spendingByCategory.slice(0, 6).map(cat => ({
         name: cat.category_name || 'Otros',
-        value: Number(cat.total_amount) || 0,
-        emoji: cat.category_icon || '📦',
-        color: cat.category_color || '#6B7280'
+        value: Number(cat.total) || 0,
+        emoji: cat.icon || '📦',
+        color: cat.color || '#6B7280'
       }));
     }
     
@@ -211,7 +245,7 @@ export const useDashboardData = (selectedMonth?: Date) => {
     
     const categoryMap = new Map<string, CategoryExpense>();
     transactions
-      .filter(t => t.type === 'gasto')
+      .filter(t => t.type === 'expense')
       .forEach(t => {
         const catName = t.category_name || 'Otros';
         const current = categoryMap.get(catName) || { 
@@ -234,8 +268,8 @@ export const useDashboardData = (selectedMonth?: Date) => {
     if (dailyBalance && dailyBalance.length > 0) {
       return dailyBalance.slice(-7).map(day => ({
         day: new Date(day.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }),
-        gastos: Number(day.daily_expenses) || 0,
-        ingresos: Number(day.daily_income) || 0
+        gastos: Number(day.total_expense) || 0,
+        ingresos: Number(day.total_income) || 0
       }));
     }
     
@@ -244,13 +278,13 @@ export const useDashboardData = (selectedMonth?: Date) => {
     
     const dailyMap = new Map<string, DailyTrend>();
     transactions.forEach(t => {
-      const date = new Date(t.created_at);
+      const date = new Date(t.email_received_at);
       const dayKey = date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
       
       const current = dailyMap.get(dayKey) || { day: dayKey, gastos: 0, ingresos: 0 };
       const amount = Math.abs(Number(t.amount) || 0);
       
-      if (t.type === 'gasto') {
+      if (t.type === 'expense') {
         current.gastos += amount;
       } else {
         current.ingresos += amount;
@@ -268,14 +302,14 @@ export const useDashboardData = (selectedMonth?: Date) => {
     
     return spendingByCategory.map(cat => ({
       category: cat.category_name || 'Otros',
-      emoji: cat.category_icon || '📦',
-      current: Number(cat.total_amount) || 0,
+      emoji: cat.icon || '📦',
+      current: Number(cat.total) || 0,
       previous: 0,
       change: 0
     }));
   }, [spendingByCategory]);
 
-  // Generate insights
+  // Generate insights (all in Spanish)
   const insights = useMemo(() => {
     const result: Array<{ type: 'warning' | 'success' | 'info' | 'tip'; icon: string; message: string }> = [];
     
