@@ -40,32 +40,26 @@ const Dashboard = () => {
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario";
 
-  // Debug log
-  useEffect(() => {
-    console.log('Dashboard - User:', user);
-    console.log('Dashboard - User ID:', user?.id);
-  }, [user]);
-
-  // Transform data for components
+  // Transform data for components - using view fields
   const formattedPending = pendingTransactions.map(t => ({
     id: t.id,
-    provider: t.payment_providers?.name || "Banco",
+    provider: t.provider_name || "Banco",
     amount: t.amount,
-    merchant: t.merchant,
-    suggested_category: t.categories?.name || "Otros",
-    suggested_emoji: t.categories?.icon || "📦",
+    merchant: t.description || t.merchant,
+    suggested_category: t.category_name || "Otros",
+    suggested_emoji: t.category_icon || "📦",
     date: t.created_at
   }));
 
   const formattedTransactions = recentTransactions.map(t => ({
     id: t.id,
-    merchant: t.merchant,
+    merchant: t.description || t.merchant,
     amount: t.amount,
     date: t.created_at,
     category_id: t.category_id || "",
-    category_name: t.categories?.name || "Otros",
-    category_emoji: t.categories?.icon || "📦",
-    provider: t.payment_providers?.name || "Banco",
+    category_name: t.category_name || "Otros",
+    category_emoji: t.category_icon || "📦",
+    provider: t.provider_name || "Banco",
     is_confirmed: t.is_confirmed,
     type: t.type
   }));
@@ -74,7 +68,6 @@ const Dashboard = () => {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    // Only show welcome modal once (stored in localStorage)
     const hasSeenWelcome = localStorage.getItem('fintrack_welcome_seen');
     if (!isLoading && isEmpty && !hasSeenWelcome) {
       setShowWelcome(true);
@@ -92,7 +85,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Modal for empty state */}
       <WelcomeModal open={showWelcome} onClose={handleCloseWelcome} />
 
       {/* Header */}
@@ -128,7 +120,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Summary Cards - Always visible */}
+      {/* Summary Cards */}
       <SummaryCards
         income={summary.income}
         expenses={summary.expenses}
@@ -144,7 +136,7 @@ const Dashboard = () => {
       {/* Insights */}
       {insights.length > 0 && <InsightsSection insights={insights} />}
 
-      {/* Charts Grid - Always visible with empty states */}
+      {/* Charts Grid */}
       <div className="grid lg:grid-cols-2 gap-6">
         {expensesByCategory.length > 0 ? (
           <ExpensesPieChart data={expensesByCategory} />
@@ -169,7 +161,7 @@ const Dashboard = () => {
         <CategorySummaryTable data={categoryComparison} />
       )}
 
-      {/* Recent Transactions - Always visible */}
+      {/* Recent Transactions */}
       <div className="bg-card border border-border rounded-2xl p-6">
         <h3 className="text-foreground font-medium mb-4">Transacciones Recientes</h3>
         {formattedTransactions.length > 0 ? (
@@ -177,7 +169,7 @@ const Dashboard = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">Tus transacciones aparecerán aquí</p>
-            <p className="text-muted-foreground/70 text-sm mt-1">Sincronización activa cada 5 minutos</p>
+            <p className="text-muted-foreground/70 text-sm mt-1">Sincronización activa cada 30 segundos</p>
           </div>
         )}
       </div>
