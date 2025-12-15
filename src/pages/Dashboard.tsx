@@ -12,6 +12,9 @@ import MonthSelector from "@/components/dashboard/MonthSelector";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { WelcomeModal } from "@/components/dashboard/WelcomeModal";
 import { EmptyChartState } from "@/components/dashboard/EmptyChartState";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -25,8 +28,15 @@ const Dashboard = () => {
     insights,
     pendingTransactions,
     recentTransactions,
-    isLoading
+    isLoading,
+    refetch,
+    lastUpdated
   } = useDashboardData(currentMonth);
+
+  const handleRefresh = async () => {
+    await refetch();
+    toast.success('Datos actualizados');
+  };
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario";
 
@@ -83,12 +93,31 @@ const Dashboard = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
             👋 ¡Hola, {userName}!
           </h1>
-          <p className="text-muted-foreground">Así va tu mes...</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-muted-foreground">Así va tu mes...</p>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                {lastUpdated ? `Actualizado: ${lastUpdated.toLocaleTimeString('es-CO')}` : 'Sincronizando...'}
+              </span>
+            </div>
+          </div>
         </div>
-        <MonthSelector
-          currentMonth={currentMonth}
-          onMonthChange={setCurrentMonth}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualizar
+          </Button>
+          <MonthSelector
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+          />
+        </div>
       </div>
 
       {/* Summary Cards - Always visible */}
