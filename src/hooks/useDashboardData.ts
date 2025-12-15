@@ -50,8 +50,8 @@ export const useDashboardData = (selectedMonth?: Date) => {
   const startOfPrevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
   const endOfPrevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0, 23, 59, 59);
 
-  // Fetch current month transactions
-  const { data: transactions, isLoading: loadingTransactions } = useQuery({
+  // Fetch current month transactions with auto-refresh
+  const { data: transactions, isLoading: loadingTransactions, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['transactions', user?.id, startOfMonth.toISOString()],
     queryFn: async () => {
       console.log('Fetching transactions for user:', user?.id);
@@ -75,7 +75,10 @@ export const useDashboardData = (selectedMonth?: Date) => {
       if (error) throw error;
       return data as Transaction[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchIntervalInBackground: false, // Only when tab is active
+    staleTime: 10000 // Consider data fresh for 10 seconds
   });
 
   // Fetch previous month expenses for comparison
@@ -260,6 +263,8 @@ export const useDashboardData = (selectedMonth?: Date) => {
     insights,
     pendingTransactions,
     recentTransactions,
-    isLoading: loadingTransactions
+    isLoading: loadingTransactions,
+    refetch,
+    lastUpdated: dataUpdatedAt ? new Date(dataUpdatedAt) : null
   };
 };
