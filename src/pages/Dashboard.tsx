@@ -44,14 +44,14 @@ const Dashboard = () => {
     merchant: t.merchant,
     suggested_category: t.categories?.name || "Otros",
     suggested_emoji: t.categories?.icon || "📦",
-    date: t.transaction_date
+    date: t.created_at
   }));
 
   const formattedTransactions = recentTransactions.map(t => ({
     id: t.id,
     merchant: t.merchant,
     amount: t.amount,
-    date: t.transaction_date,
+    date: t.created_at,
     category_id: t.category_id || "",
     category_name: t.categories?.name || "Otros",
     category_emoji: t.categories?.icon || "📦",
