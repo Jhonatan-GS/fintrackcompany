@@ -92,7 +92,7 @@ export const Pricing = () => {
             <div className="text-center mb-5 mt-3">
               <h3 className="text-lg sm:text-xl font-bold mb-2">Pro</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl sm:text-4xl font-bold text-gradient">$15</span>
+                <span className="text-3xl sm:text-4xl font-bold text-gradient">$5</span>
                 <span className="text-muted-foreground text-xs">USD/mes</span>
               </div>
             </div>
@@ -134,7 +134,7 @@ export const Pricing = () => {
               </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2">Familia</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl sm:text-4xl font-bold text-muted-foreground">$25</span>
+                <span className="text-3xl sm:text-4xl font-bold text-muted-foreground">$15</span>
                 <span className="text-muted-foreground text-xs">USD/mes</span>
               </div>
             </div>
