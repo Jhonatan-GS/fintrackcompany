@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, X, Sparkles } from "lucide-react";
+import { Plus, X, Trash2, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Category {
   id: string;
@@ -16,20 +17,14 @@ interface Category {
   is_global: boolean;
 }
 
-interface CategoriesStepProps {
-  userId: string;
-  onComplete: () => void;
-  onBack: () => void;
-}
-
 const EMOJI_OPTIONS = ['📦', '🎮', '🎵', '📷', '💻', '🏋️', '🎨', '🍕', '☕', '🎁', '✈️', '🐕', '💅', '🔧'];
 const COLOR_OPTIONS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
 
-export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepProps) => {
+const CategoriesPage = () => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [customCategoryName, setCustomCategoryName] = useState('');
   const [newCategory, setNewCategory] = useState({
     name: '',
     icon: '📦',
@@ -37,16 +32,22 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
     is_income: false
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (user?.id) {
+      loadCategories();
+    }
+  }, [user?.id]);
 
   const loadCategories = async () => {
+    if (!user?.id) return;
+    
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .or(`is_global.eq.true,user_id.eq.${userId}`)
+      .or(`is_global.eq.true,user_id.eq.${user.id}`)
+      .order('is_global', { ascending: false })
       .order('sort_order');
 
     if (!error && data) {
@@ -55,11 +56,12 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
     setLoading(false);
   };
 
-  const expenseCategories = categories.filter(c => !c.is_income);
-  const incomeCategories = categories.filter(c => c.is_income);
+  const globalExpenseCategories = categories.filter(c => c.is_global && !c.is_income);
+  const globalIncomeCategories = categories.filter(c => c.is_global && c.is_income);
+  const customCategories = categories.filter(c => !c.is_global);
 
   const createCategory = async () => {
-    if (!newCategory.name.trim()) {
+    if (!newCategory.name.trim() || !user?.id) {
       toast.error('Ingresa un nombre para la categoría');
       return;
     }
@@ -68,7 +70,7 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
     const { error } = await supabase
       .from('categories')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         name: newCategory.name.trim(),
         slug: newCategory.name.toLowerCase().replace(/\s+/g, '-'),
         icon: newCategory.icon,
@@ -88,6 +90,23 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
     setIsCreating(false);
   };
 
+  const deleteCategory = async (id: string) => {
+    setDeletingId(id);
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id)
+      .eq('is_global', false);
+
+    if (error) {
+      toast.error('Error al eliminar categoría');
+    } else {
+      toast.success('Categoría eliminada');
+      loadCategories();
+    }
+    setDeletingId(null);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -97,33 +116,35 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="text-4xl mb-4">✨</div>
-        <h2 className="text-2xl font-bold text-foreground">Clasificación inteligente</h2>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Nuestra IA clasifica automáticamente tus transacciones. 
-          Estas son las categorías preestablecidas que usamos:
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Categorías</h1>
+        <p className="text-muted-foreground">
+          Administra las categorías para clasificar tus transacciones
         </p>
       </div>
 
-      {/* AI Badge */}
-      <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-primary text-sm font-medium">100% automático • Solo informativo</span>
-        </div>
-      </div>
-
-      {/* Categories as simple list */}
+      {/* Global Categories Info */}
       <div className="bg-muted/30 rounded-2xl p-5 border border-border/50">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Categorías preestablecidas</h3>
+            <p className="text-sm text-muted-foreground">
+              Estas categorías son globales y la IA las usa para clasificar automáticamente tus transacciones.
+            </p>
+          </div>
+        </div>
+
         <div className="space-y-4">
           {/* Expense Categories */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Categorías de gastos</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Gastos</p>
             <div className="flex flex-wrap gap-2">
-              {expenseCategories.map((cat) => (
+              {globalExpenseCategories.map((cat) => (
                 <span
                   key={cat.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 text-sm text-muted-foreground"
@@ -137,9 +158,9 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
 
           {/* Income Categories */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Categorías de ingresos</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Ingresos</p>
             <div className="flex flex-wrap gap-2">
-              {incomeCategories.map((cat) => (
+              {globalIncomeCategories.map((cat) => (
                 <span
                   key={cat.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 text-sm text-muted-foreground"
@@ -153,40 +174,61 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
         </div>
       </div>
 
-      {/* Separator */}
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-muted-foreground text-sm">¿Falta alguna?</span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
+      {/* Custom Categories */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Mis categorías personalizadas</h3>
+          <Button
+            onClick={() => setShowModal(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva categoría
+          </Button>
+        </div>
 
-      {/* Create custom category */}
-      <button
-        onClick={() => setShowModal(true)}
-        className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-      >
-        <Plus className="w-4 h-4" />
-        Crear categoría personalizada (opcional)
-      </button>
-
-      <p className="text-center text-muted-foreground text-xs">
-        Las categorías personalizadas aparecerán cuando confirmes transacciones
-      </p>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 rounded-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Anterior
-        </button>
-        <button
-          onClick={onComplete}
-          className="px-6 py-3 rounded-lg font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all glow-primary"
-        >
-          Finalizar ✓
-        </button>
+        {customCategories.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed border-border rounded-xl">
+            <p className="text-muted-foreground mb-2">No tienes categorías personalizadas</p>
+            <p className="text-sm text-muted-foreground">
+              Crea categorías adicionales para organizar mejor tus gastos
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {customCategories.map((cat) => (
+              <div
+                key={cat.id}
+                className="flex items-center justify-between p-4 bg-card border border-border rounded-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                    style={{ backgroundColor: `${cat.color}20` }}
+                  >
+                    {cat.icon}
+                  </span>
+                  <div>
+                    <p className="font-medium text-foreground">{cat.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cat.is_income ? 'Ingreso' : 'Gasto'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteCategory(cat.id)}
+                  disabled={deletingId === cat.id}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Create Category Modal */}
@@ -299,3 +341,5 @@ export const CategoriesStep = ({ userId, onComplete, onBack }: CategoriesStepPro
     </div>
   );
 };
+
+export default CategoriesPage;

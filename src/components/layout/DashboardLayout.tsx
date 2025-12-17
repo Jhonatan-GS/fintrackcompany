@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TrendingUp, LogOut, LayoutDashboard, Receipt, BarChart3, Building2, Settings, MessageCircle, Shield } from "lucide-react";
+import { TrendingUp, LogOut, LayoutDashboard, Receipt, BarChart3, Building2, Settings, MessageCircle, Shield, Tags } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +13,7 @@ const navItems = [
   { icon: Receipt, label: "Transacciones", href: "/transactions" },
   { icon: BarChart3, label: "Reportes", href: "/reports" },
   { icon: Building2, label: "Mis Bancos", href: "/banks" },
+  { icon: Tags, label: "Categorías", href: "/categories" },
   { icon: Settings, label: "Ajustes", href: "/settings" },
 ];
 
@@ -179,6 +180,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </Link>
                 );
               })}
+              <button
+                onClick={signOut}
+                className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-xs">Salir</span>
+              </button>
             </div>
           </nav>
         )}
