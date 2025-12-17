@@ -29,28 +29,45 @@ const AuthCallback = () => {
         if (data?.session) {
           console.log('✅ Sesión válida, usuario:', data.session.user.email);
           
-          // Guardar tokens de Gmail si están disponibles
           const session = data.session;
+          const userEmail = session.user.email;
+          
+          // Verificar si el usuario está aprobado en la waitlist
+          const { data: waitlistData } = await supabase
+            .from('waitlist')
+            .select('status')
+            .eq('email', userEmail)
+            .maybeSingle();
+          
+          const isApprovedInWaitlist = waitlistData?.status === 'approved';
+          console.log('Estado en waitlist:', waitlistData?.status, 'Aprobado:', isApprovedInWaitlist);
+          
+          // Actualizar access_approved basado en el estado de waitlist
+          const updateData: Record<string, unknown> = {
+            access_approved: isApprovedInWaitlist
+          };
+          
+          // Guardar tokens de Gmail si están disponibles
           if (session.provider_token) {
             console.log('📧 Guardando tokens de Gmail...');
-            const { error: updateError } = await supabase
-              .from('users')
-              .update({
-                gmail_access_token: session.provider_token,
-                gmail_refresh_token: session.provider_refresh_token || null,
-                gmail_token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-                gmail_connected: true
-              })
-              .eq('id', session.user.id);
-            
-            if (updateError) {
-              console.error('Error guardando tokens de Gmail:', updateError);
-            } else {
-              console.log('✅ Tokens de Gmail guardados');
-            }
+            updateData.gmail_access_token = session.provider_token;
+            updateData.gmail_refresh_token = session.provider_refresh_token || null;
+            updateData.gmail_token_expires_at = new Date(Date.now() + 3600 * 1000).toISOString();
+            updateData.gmail_connected = true;
           }
           
-          // Redirigir al dashboard
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', session.user.id);
+          
+          if (updateError) {
+            console.error('Error actualizando usuario:', updateError);
+          } else {
+            console.log('✅ Usuario actualizado, access_approved:', isApprovedInWaitlist);
+          }
+          
+          // Redirigir al dashboard (ProtectedRoute manejará si tiene acceso o no)
           navigate('/dashboard', { replace: true });
         } else {
           console.log('No hay sesión, verificando hash...');
