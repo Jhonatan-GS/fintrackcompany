@@ -17,6 +17,7 @@ import TransactionsPage from "./pages/Transactions";
 import ReportsPage from "./pages/Reports";
 import BanksPage from "./pages/Banks";
 import SettingsPage from "./pages/Settings";
+import CategoriesPage from "./pages/Categories";
 import AccessPending from "./pages/AccessPending";
 import AdminPage from "./pages/Admin";
 
@@ -88,6 +89,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <SettingsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <CategoriesPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

@@ -9,7 +9,10 @@ interface SummaryCardsProps {
 }
 
 const SummaryCards = ({ income, expenses, balance, previousMonthExpenses }: SummaryCardsProps) => {
-  const percentageChange = Math.round(((expenses - previousMonthExpenses) / previousMonthExpenses) * 100);
+  const hasComparisonData = previousMonthExpenses > 0;
+  const percentageChange = hasComparisonData 
+    ? Math.round(((expenses - previousMonthExpenses) / previousMonthExpenses) * 100)
+    : 0;
   const isSpendingLess = percentageChange < 0;
 
   const cards = [
@@ -37,11 +40,17 @@ const SummaryCards = ({ income, expenses, balance, previousMonthExpenses }: Summ
     {
       icon: "🎯",
       label: "vs Mes anterior",
-      value: `${percentageChange >= 0 ? '+' : ''}${percentageChange}%`,
-      subtext: isSpendingLess ? "Gastaste menos 🎉" : "Gastaste más 📈",
-      colorClass: isSpendingLess ? "text-emerald-400" : "text-red-400",
-      bgClass: isSpendingLess ? "bg-emerald-500/10" : "bg-red-500/10",
-      trend: isSpendingLess ? "down" : "up",
+      value: hasComparisonData ? `${percentageChange >= 0 ? '+' : ''}${percentageChange}%` : "—",
+      subtext: hasComparisonData 
+        ? (isSpendingLess ? "Gastaste menos 🎉" : "Gastaste más 📈")
+        : "Sin datos previos",
+      colorClass: hasComparisonData 
+        ? (isSpendingLess ? "text-emerald-400" : "text-red-400")
+        : "text-muted-foreground",
+      bgClass: hasComparisonData 
+        ? (isSpendingLess ? "bg-emerald-500/10" : "bg-red-500/10")
+        : "bg-muted/50",
+      trend: hasComparisonData ? (isSpendingLess ? "down" : "up") : null,
     },
   ];
 
