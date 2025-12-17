@@ -101,7 +101,8 @@ const AdminPage = () => {
   };
 
   const handleApprove = async (entry: WaitlistEntry) => {
-    const { error } = await supabase
+    // 1. Actualizar estado en waitlist
+    const { error: waitlistError } = await supabase
       .from('waitlist')
       .update({ 
         status: 'approved', 
@@ -110,10 +111,21 @@ const AdminPage = () => {
       })
       .eq('id', entry.id);
 
-    if (error) {
+    if (waitlistError) {
       toast.error('Error al aprobar');
-      console.error(error);
+      console.error(waitlistError);
       return;
+    }
+
+    // 2. Actualizar access_approved en la tabla users si el usuario ya existe
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ access_approved: true })
+      .eq('email', entry.email);
+
+    if (userError) {
+      console.error('Error actualizando acceso del usuario:', userError);
+      // No es crítico si falla - el usuario puede no existir aún
     }
     
     toast.success(`${entry.full_name || entry.email} ha sido aprobado`);
@@ -121,15 +133,26 @@ const AdminPage = () => {
   };
 
   const handleReject = async (entry: WaitlistEntry) => {
-    const { error } = await supabase
+    // 1. Actualizar estado en waitlist
+    const { error: waitlistError } = await supabase
       .from('waitlist')
       .update({ status: 'rejected' })
       .eq('id', entry.id);
 
-    if (error) {
+    if (waitlistError) {
       toast.error('Error al rechazar');
-      console.error(error);
+      console.error(waitlistError);
       return;
+    }
+
+    // 2. Revocar acceso en la tabla users si el usuario existe
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ access_approved: false })
+      .eq('email', entry.email);
+
+    if (userError) {
+      console.error('Error revocando acceso del usuario:', userError);
     }
     
     toast.success(`${entry.full_name || entry.email} ha sido rechazado`);
